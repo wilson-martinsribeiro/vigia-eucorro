@@ -6,6 +6,11 @@ cd /d "%~dp0"
 rem Se a extracao criou uma pasta dentro da outra, entra nela sozinho
 if not exist "painel.mjs" if exist "automacao-eucorro\painel.mjs" cd /d "%~dp0automacao-eucorro"
 
+rem Este arquivo ATUALIZA um programa ja instalado. Se for clicado solto
+rem (na pasta Downloads, por exemplo), nao pode sair baixando o programa ali.
+if not exist "painel.mjs" goto :lugarerrado
+if not exist "vigia-eucorro.mjs" goto :lugarerrado
+
 set REPO=https://raw.githubusercontent.com/wilson-martinsribeiro/vigia-eucorro/main
 set TMPD=%TEMP%\vigia-eucorro-update
 
@@ -107,6 +112,29 @@ echo   aparece na pagina do projeto.
 echo.
 pause
 exit /b 0
+
+:lugarerrado
+echo.
+echo   ==============================================================
+echo      ESTE ARQUIVO ESTA NA PASTA ERRADA
+echo   ==============================================================
+echo.
+echo   Ele serve para atualizar o programa que ja esta instalado,
+echo   entao precisa ficar DENTRO da pasta do programa.
+echo.
+echo   Pasta onde ele esta agora:
+echo   %CD%
+echo.
+echo   O QUE FAZER
+echo   1^) Recorte este arquivo ^(Ctrl+X^)
+echo   2^) Abra a pasta automacao-eucorro, onde voce usa o programa
+echo   3^) Cole ali dentro ^(Ctrl+V^) e clique nele de novo
+echo.
+echo   A pasta certa e a que tem os arquivos painel.mjs,
+echo   vigia-eucorro.mjs e INICIAR-PAINEL.bat.
+echo.
+pause
+exit /b 1
 
 :falhou
 echo.
