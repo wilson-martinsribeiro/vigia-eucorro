@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vigia EuCorro</title>
+<style>
+  :root{
+    --bg:#f7f7f5; --card:#fff; --linha:#e3e3df; --txt:#24241f; --fraco:#6f6f66;
+    --ac:#b8562f; --ac-txt:#fff; --ok:#2f7a4d; --erro:#b3261e;
+    --mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#1b1b18; --card:#242420; --linha:#37372f; --txt:#ecebe4; --fraco:#a3a294; --ac:#d4794e;
+  }}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+       font:15px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+  .wrap{max-width:780px;margin:0 auto;padding-block:26px;padding-left:18px;padding-right:18px}
+  h1{font-size:1.35rem;margin:0 0 2px;letter-spacing:-.015em}
+  h2{font-size:1rem;margin:26px 0 8px;letter-spacing:-.01em}
+  h2:first-child{margin-top:0}
+  .sub{color:var(--fraco);font-size:.9rem;margin:0 0 18px}
+  .card{background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:20px;margin-bottom:16px}
+  label{display:block;font-weight:600;font-size:.83rem;margin:14px 0 5px}
+  label:first-child{margin-top:0}
+  .dica{font-weight:400;color:var(--fraco);font-size:.8rem}
+  input,select,textarea{width:100%;padding:9px 11px;border:1px solid var(--linha);border-radius:8px;
+    background:var(--bg);color:var(--txt);font:inherit;font-size:.92rem}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--ac);outline-offset:-1px}
+  .linha{display:flex;gap:10px;flex-wrap:wrap}
+  .linha>*{flex:1;min-width:130px}
+  button{padding:9px 16px;border-radius:8px;border:1px solid var(--linha);background:var(--card);
+    color:var(--txt);font:inherit;font-weight:600;font-size:.9rem;cursor:pointer}
+  button:hover:not(:disabled){border-color:var(--ac)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.primario{background:var(--ac);color:var(--ac-txt);border-color:var(--ac)}
+  .acoes{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+  .aux{display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap}
+  .aux button{padding:5px 11px;font-size:.8rem;font-weight:500}
+  .barra{height:8px;background:var(--linha);border-radius:99px;overflow:hidden;margin:6px 0 10px}
+  .barra i{display:block;height:100%;background:var(--ac);width:0;transition:width .4s}
+  .nums{display:flex;justify-content:space-between;font-size:.85rem;color:var(--fraco)}
+  .nums b{color:var(--txt);font-variant-numeric:tabular-nums}
+  #log{background:#14140f;color:#d8d5c4;font:12px/1.6 var(--mono);padding:13px;border-radius:9px;
+       height:230px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+  #log .ok{color:#8fce9b} #log .er{color:#f08d84} #log .at{color:#f0c674}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:600;
+    padding:3px 10px;border-radius:99px;background:var(--linha);color:var(--fraco)}
+  .pill.on{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+  .pill.aguard{background:color-mix(in srgb,#c8922a 20%,transparent);color:#a5761a}
+  .pill i{width:7px;height:7px;border-radius:99px;background:currentColor}
+  .aviso{font-size:.85rem;color:var(--fraco);border-left:2px solid var(--linha);padding-left:11px;margin-top:16px}
+  .msg{font-size:.86rem;margin-top:10px;display:none}
+  .msg.er{color:var(--erro);display:block} .msg.ok{color:var(--ok);display:block}
+  .topo{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .abas{display:flex;gap:4px;border-bottom:1px solid var(--linha);margin-bottom:18px}
+  .abas button{border:0;background:none;border-radius:0;border-bottom:2px solid transparent;
+    padding:9px 14px;color:var(--fraco);font-weight:600;font-size:.9rem}
+  .abas button.sel{color:var(--ac);border-bottom-color:var(--ac)}
+  .abas button:hover{border-color:transparent;border-bottom-color:var(--linha);color:var(--txt)}
+  .abas button.sel:hover{border-bottom-color:var(--ac);color:var(--ac)}
+  .passo{display:flex;gap:13px;margin-bottom:16px}
+  .passo .n{flex:0 0 25px;height:25px;border-radius:99px;background:var(--ac);color:var(--ac-txt);
+    display:grid;place-items:center;font-size:.78rem;font-weight:700}
+  .passo .c{flex:1;min-width:0}
+  .passo p{margin:0 0 5px}
+  .passo .det{color:var(--fraco);font-size:.87rem}
+  code{background:var(--linha);padding:1px 6px;border-radius:5px;font:12.5px var(--mono);word-break:break-all}
+  pre{background:var(--bg);border:1px solid var(--linha);border-radius:8px;padding:11px;
+      overflow-x:auto;font:12.5px/1.5 var(--mono);margin:8px 0}
+  textarea{height:260px;font:12px/1.55 var(--mono);resize:vertical}
+  .oculto{display:none}
+  ol{padding-left:20px} li{margin-bottom:5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topo">
+    <div>
+      <h1>Vigia EuCorro</h1>
+      <p class="sub">Observa a pasta e sobe as fotos em blocos, sozinho.</p>
+    </div>
+    <span class="pill" id="pill"><i></i><span id="pillTxt">parado</span></span>
+  </div>
+
+  <div class="abas">
+    <button id="abaEnviar" class="sel">Enviar fotos</button>
+    <button id="abaComecar">Começar aqui</button>
+  </div>
+
+  <!-- ══════════════ ENVIAR ══════════════ -->
+  <div id="telaEnviar">
+    <div class="card">
+      <label>Pasta das fotos tratadas</label>
+      <input id="pasta" placeholder="C:\Users\voce\Desktop\NOME DA PROVA\TRATADAS\LOTE 1">
+      <div class="aux">
+        <button type="button" id="btContar">Contar fotos da pasta</button>
+        <span class="dica" id="contagem"></span>
+      </div>
+
+      <label>Galeria no EuCorro</label>
+      <select id="galeria"><option value="">— clique em "Carregar galerias" —</option></select>
+      <div class="aux">
+        <button type="button" id="btGalerias">Carregar galerias</button>
+        <span class="dica">Abre o Chrome. Se pedir login, faça na janela — fica salvo.</span>
+      </div>
+
+      <div class="linha">
+        <div>
+          <label>Total esperado <span class="dica">(alvo)</span></label>
+          <input id="alvo" type="number" min="1" placeholder="9993">
+        </div>
+        <div>
+          <label>Enviar a cada <span class="dica">(bloco)</span></label>
+          <input id="lote" type="number" min="1" value="500">
+        </div>
+      </div>
+
+      <div class="acoes">
+        <button class="primario" id="btIniciar">Iniciar</button>
+        <button id="btParar" disabled>Parar</button>
+      </div>
+      <div class="msg" id="msg"></div>
+
+      <p class="aviso">
+        Não guardo login nem senha. A sessão fica no perfil do Chrome desta pasta —
+        você entra uma vez e ele lembra. Se parar no meio, é só iniciar de novo:
+        o histórico garante que nenhuma foto sobe duas vezes.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="nums">
+        <span>Enviadas: <b id="nEnv">0</b> de <b id="nAlvo">—</b></span>
+        <span id="pct">0%</span>
+      </div>
+      <div class="barra"><i id="barra"></i></div>
+      <div id="log">aguardando…</div>
+    </div>
+  </div>
+
+  <!-- ══════════════ COMEÇAR AQUI ══════════════ -->
+  <div id="telaComecar" class="oculto">
+    <div class="card">
+      <h2>O que este programa faz</h2>
+      <p class="det" style="color:var(--fraco);font-size:.9rem;margin-top:0">
+        Você exporta as fotos tratadas do Lightroom para uma pasta. Este programa fica
+        observando essa pasta e, a cada bloco de fotos novas, envia para a sua galeria no
+        EuCorro — sem você precisar ficar na frente do computador. Se a internet cair ou o
+        computador reiniciar, ele retoma exatamente de onde parou, sem repetir nenhuma foto.
+      </p>
+
+      <h2>Instalando do zero</h2>
+
+      <div class="passo"><div class="n">1</div><div class="c">
+        <p><b>Instale o Node.js</b></p>
+        <p class="det">Baixe a versão <b>LTS</b> em <code>nodejs.org</code> e instale com as opções
+        padrão (Avançar até o fim). É o motor que faz o programa rodar.</p>
+      </div></div>
+
+      <div class="passo"><div class="n">2</div><div class="c">
+        <p><b>Coloque a pasta na Área de Trabalho</b></p>
+        <p class="det">Extraia o arquivo <code>automacao-eucorro.zip</code> direto na sua Área de
+        Trabalho. Deve ficar uma pasta chamada <code>automacao-eucorro</code> com quatro arquivos
+        dentro.</p>
+      </div></div>
+
+      <div class="passo"><div class="n">3</div><div class="c">
+        <p><b>Duplo clique em <code>INICIAR-PAINEL.bat</code></b></p>
+        <p class="det">Na primeira vez ele instala sozinho o que falta — leva alguns minutos e
+        aparece bastante texto na janela preta. É normal. Quando terminar, esta tela abre no
+        navegador. <b>Deixe a janela preta aberta</b> enquanto estiver usando.</p>
+      </div></div>
+
+      <div class="passo"><div class="n">4</div><div class="c">
+        <p><b>Entre na sua conta do EuCorro (só uma vez)</b></p>
+        <p class="det">Vá na aba <b>Enviar fotos</b> e clique em <b>Carregar galerias</b>. Vai abrir
+        uma janela do Chrome limpa, pedindo login. <b>Faça o login normalmente nessa janela</b>,
+        como você faria no site. O programa percebe sozinho quando você terminar e traz suas provas
+        para o menu.</p>
+        <p class="det">A partir daí ele lembra da sua conta — você não precisa logar de novo.</p>
+      </div></div>
+
+      <h2>Usando no dia a dia</h2>
+      <ol style="color:var(--fraco);font-size:.9rem">
+        <li>Cole o caminho da pasta das fotos tratadas e clique em <b>Contar fotos da pasta</b>.</li>
+        <li>Escolha a prova no menu de galerias.</li>
+        <li>Confira o total esperado e o tamanho do bloco (500 é um bom padrão).</li>
+        <li>Clique em <b>Iniciar</b> e acompanhe a barra. Pode fechar a aba do navegador —
+            o envio continua enquanto a janela preta estiver aberta.</li>
+      </ol>
+      <p class="det" style="color:var(--fraco);font-size:.9rem">
+        <b>Dica para achar o caminho da pasta:</b> abra a pasta no Explorador de Arquivos,
+        clique na barra de endereço no topo e copie o texto que aparece.
+      </p>
+
+      <h2>Se algo der errado</h2>
+      <p class="det" style="color:var(--fraco);font-size:.9rem">
+        O log desta tela mostra o essencial. O detalhe técnico fica no arquivo
+        <code>diagnostico.log</code>, dentro da pasta do programa. Mande esse arquivo junto
+        com o que você estava fazendo — dá para identificar quase tudo por ele.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Contexto para continuar evoluindo com o Claude</h2>
+      <p class="det" style="color:var(--fraco);font-size:.9rem;margin-top:0">
+        Copie o texto abaixo e cole numa conversa nova com o Claude. Ele vai entender o projeto
+        inteiro — o que já existe, por que foi feito assim e o que ainda não foi testado — e
+        poderá ajustar o programa para a sua necessidade.
+      </p>
+      <textarea id="ctx" readonly></textarea>
+      <div class="aux">
+        <button type="button" id="btCopiar">Copiar contexto</button>
+        <span class="dica" id="copiado"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const log = $('#log');
+
+// ─── Contexto para o Claude ───────────────────────────────────────────────────
+$('#ctx').value = `CONTEXTO — Automação de upload de fotos para o EuCorro
+
+O QUE É
+Programa local que sobe fotos de corrida em massa para o eucorro.com sem a pessoa
+ficar no computador. O fotógrafo exporta do Lightroom para uma pasta; o programa
+observa a pasta e envia ao EuCorro em blocos (padrão 500) até atingir o total esperado.
+
+ARQUIVOS (pasta automacao-eucorro, na Área de Trabalho)
+- INICIAR-PAINEL.bat .. duplo clique; instala dependências na 1ª vez e sobe o painel
+- painel.mjs ......... servidor Node em 127.0.0.1:4599 (API, lista galerias,
+                       inicia/para o vigia, log ao vivo por SSE)
+- painel.html ........ a interface
+- vigia-eucorro.mjs .. o motor: Playwright dirigindo o Chrome instalado num perfil
+                       dedicado (ou o Chromium do Playwright, se não houver Chrome)
+- ledger-<id>.json ... histórico de fotos já enviadas, por galeria
+- diagnostico.log .... saída técnica detalhada
+
+POR QUE PLAYWRIGHT RODANDO LOCAL
+O uploader do EuCorro é um input#fotos (multiple) + button#envia, com tabela de status
+que evolui: enviando -> processando -> sucesso. Com o Chrome na MESMA máquina dos
+arquivos, setInputFiles envia apenas as strings de caminho numa única mensagem CDP —
+os GB de fotos não trafegam por lugar nenhum. Automações que atravessam uma ponte
+(por exemplo a extensão do Claude no Chrome) têm teto de 10 MB por chamada e ficam
+cerca de 16x mais lentas que o Ctrl+A manual. Medido: 14,6 fotos/min pela ponte
+contra ~240 fotos/min no método manual.
+
+REGRAS DO NEGÓCIO
+- Nunca reenviar foto já enviada. O EuCorro deduplica sozinho, mas o ledger é a
+  primeira linha de defesa.
+- Nunca manter mais de uma aba aws_upload aberta ao mesmo tempo.
+- O Chrome não abre duas instâncias no mesmo perfil: por isso o painel bloqueia
+  "carregar galerias" enquanto o vigia está rodando.
+
+SALVAGUARDAS JÁ IMPLEMENTADAS (não remover sem motivo)
+- Guarda de mtime: não envia arquivo que o Lightroom ainda está gravando (8s parado)
+- Ledger por nome de arquivo: queda no meio retoma exatamente
+- Espera de login que NÃO re-navega por cima da digitação da senha
+- Condição terminal ok+erro==total (nunca só ok==total) + watchdog de estagnação
+- Para exato no alvo e avisa se sobrou arquivo na pasta
+- Reconhecimento de status por exclusão, não por lista de palavras
+- Reserva de navegador: tenta o Chrome instalado e, se não houver, usa o Chromium
+  que o Playwright baixa na instalação. Sem nenhum dos dois, sai com código 4 e
+  explica o que instalar (antes disso, máquina sem Chrome falhava sem dizer por quê)
+
+DECISÃO TOMADA
+Sem campos de login e senha no painel. O perfil dedicado do Chrome já persiste a
+sessão: login manual único. Guardar senha em texto puro no disco seria mais risco
+sem economizar nenhum passo.
+
+JÁ VALIDADO EM PRODUÇÃO
+- 9.993 fotos na galeria FURIOSO EXTREMA: zero duplicados, zero erros
+- Pasta crescendo durante o envio (Lightroom exportando em paralelo): funciona
+
+AINDA NÃO VERIFICADO
+- Se o EuCorro tolera modo headless (hoje roda com janela visível, que é o seguro)
+- Se a tabela de status é virtualizada com muitas linhas (afetaria a contagem por DOM)
+
+COMO PEDIR EVOLUÇÕES
+Descreva o que quer mudar. Peça sempre que o Claude (1) TESTE a alteração contra um
+mock do uploader antes de entregar e (2) confira o hash do arquivo depois de gravar
+no disco — já aconteceu de a gravação reportar sucesso com conteúdo antigo.`;
+
+$('#btCopiar').onclick = async () => {
+  const t = $('#ctx');
+  try { await navigator.clipboard.writeText(t.value); }
+  catch { t.removeAttribute('readonly'); t.select(); document.execCommand('copy'); t.setAttribute('readonly',''); }
+  $('#copiado').textContent = 'copiado!';
+  setTimeout(()=>$('#copiado').textContent='', 2500);
+};
+
+// ─── Abas ─────────────────────────────────────────────────────────────────────
+function aba(qual){
+  const env = qual === 'enviar';
+  $('#telaEnviar').classList.toggle('oculto', !env);
+  $('#telaComecar').classList.toggle('oculto', env);
+  $('#abaEnviar').classList.toggle('sel', env);
+  $('#abaComecar').classList.toggle('sel', !env);
+  try { localStorage.setItem('aba', qual); } catch {}
+}
+$('#abaEnviar').onclick  = () => aba('enviar');
+$('#abaComecar').onclick = () => aba('comecar');
+
+// ─── Log ──────────────────────────────────────────────────────────────────────
+function addLinha(t){
+  const d = document.createElement('div');
+  if (/sucesso|OK em|ENCERRADO \(tudo certo\)|Login detectado|carregadas/i.test(t)) d.className='ok';
+  else if (/ERRO|FALHA|erro=[1-9]|esgotado/i.test(t)) d.className='er';
+  else if (/AVISO|ATENCAO|FACA O LOGIN|Aguardando|Faca o login/i.test(t)) d.className='at';
+  d.textContent = t;
+  const colado = log.scrollTop + log.clientHeight >= log.scrollHeight - 30;
+  log.appendChild(d);
+  if (colado) log.scrollTop = log.scrollHeight;
+}
+function msg(t, tipo){ const m=$('#msg'); m.textContent=t; m.className='msg '+(tipo||''); }
+
+function pintarEstado(e){
+  const on = e.rodando;
+  $('#pill').className = 'pill' + (on?' on':'');
+  $('#pillTxt').textContent = on ? 'rodando' : 'parado';
+  $('#btIniciar').disabled = on;
+  $('#btParar').disabled = !on;
+  $('#btGalerias').disabled = on;
+  ['pasta','galeria','alvo','lote'].forEach(id => $('#'+id).disabled = on);
+  const alvo = e.cfg?.alvo || Number($('#alvo').value) || 0;
+  const env = e.enviadas || 0;
+  $('#nEnv').textContent = env.toLocaleString('pt-BR');
+  $('#nAlvo').textContent = alvo ? alvo.toLocaleString('pt-BR') : '—';
+  const p = alvo ? Math.min(100, Math.round(env/alvo*100)) : 0;
+  $('#barra').style.width = p+'%'; $('#pct').textContent = p+'%';
+}
+async function atualizar(){
+  try { pintarEstado(await (await fetch('/api/estado')).json()); } catch {}
+}
+
+$('#btContar').onclick = async () => {
+  const pasta = $('#pasta').value.trim();
+  if (!pasta) return msg('Informe a pasta primeiro.','er');
+  $('#contagem').textContent = 'contando…';
+  const r = await (await fetch('/api/contar?pasta='+encodeURIComponent(pasta))).json();
+  if (r.erro) { $('#contagem').textContent=''; return msg(r.erro,'er'); }
+  $('#contagem').textContent = `${r.total.toLocaleString('pt-BR')} fotos agora`;
+  if (!$('#alvo').value) $('#alvo').value = r.total;
+  msg('');
+};
+
+$('#btGalerias').onclick = async () => {
+  const b = $('#btGalerias'); b.disabled = true; b.textContent = 'abrindo Chrome…';
+  $('#pill').className='pill aguard'; $('#pillTxt').textContent='aguardando login';
+  msg('Abriu uma janela do Chrome. Se aparecer a tela de login do EuCorro, faça o login lá — eu espero e sigo sozinho.','ok');
+  try {
+    const r = await (await fetch('/api/galerias')).json();
+    if (r.erro) {
+      msg(r.erro === 'PERFIL_OCUPADO' ? 'Pare o envio antes de carregar as galerias.'
+        : r.erro === 'LOGIN_NAO_CONCLUIDO' ? 'O login não foi concluído. Clique de novo e faça o login na janela do Chrome.'
+        : r.erro === 'SEM_NAVEGADOR' ? 'Não encontrei nenhum navegador neste computador. Instale o Google Chrome em google.com/chrome e tente de novo.'
+        : r.erro, 'er');
+    } else {
+      const s = $('#galeria');
+      s.innerHTML = '<option value="">— escolha a prova —</option>' +
+        r.galerias.map(g=>`<option value="${g.id}">${g.titulo} (${g.qtd} fotos)</option>`).join('');
+      msg(`${r.galerias.length} galerias carregadas. Escolha a prova acima.`,'ok');
+    }
+  } catch(e){ msg('Falha ao carregar galerias. Veja o diagnostico.log.','er'); }
+  b.disabled = false; b.textContent = 'Carregar galerias';
+  atualizar();
+};
+
+$('#btIniciar').onclick = async () => {
+  const cfg = {
+    pasta: $('#pasta').value.trim(),
+    idGaleria: $('#galeria').value,
+    alvo: Number($('#alvo').value),
+    lote: Number($('#lote').value),
+  };
+  if (!cfg.pasta)     return msg('Informe a pasta das fotos.','er');
+  if (!cfg.idGaleria) return msg('Escolha a galeria (clique em "Carregar galerias").','er');
+  if (!cfg.alvo)      return msg('Informe o total esperado.','er');
+  if (!cfg.lote)      return msg('Informe o tamanho do bloco.','er');
+  const r = await (await fetch('/api/iniciar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)})).json();
+  if (r.erro) return msg(r.erro,'er');
+  msg('Enviando. Pode acompanhar aqui embaixo.','ok');
+  log.innerHTML=''; atualizar();
+};
+
+$('#btParar').onclick = async () => {
+  await fetch('/api/parar',{method:'POST'});
+  msg('Parado. O histórico foi salvo — pode retomar quando quiser.','ok');
+  atualizar();
+};
+
+const es = new EventSource('/api/log');
+es.onmessage = ev => addLinha(JSON.parse(ev.data));
+
+(async () => {
+  try {
+    const c = await (await fetch('/api/config')).json();
+    if (c.pasta) $('#pasta').value = c.pasta;
+    if (c.alvo)  $('#alvo').value  = c.alvo;
+    if (c.lote)  $('#lote').value  = c.lote;
+    if (c.idGaleria) $('#galeria').innerHTML =
+      `<option value="${c.idGaleria}">galeria ${c.idGaleria} (última usada)</option>`;
+    // quem nunca usou cai direto no passo a passo
+    let salva = null; try { salva = localStorage.getItem('aba'); } catch {}
+    aba(salva || (c.pasta ? 'enviar' : 'comecar'));
+  } catch { aba('comecar'); }
+  atualizar();
+})();
+setInterval(atualizar, 4000);
+</script>
+</body>
+</html>

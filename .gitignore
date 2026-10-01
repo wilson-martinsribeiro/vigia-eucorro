@@ -1,0 +1,27 @@
+# Sessão do navegador — contém o login do EuCorro. NUNCA versionar.
+perfil-chrome/
+perfil*/
+
+# Histórico de fotos já enviadas e configuração local
+ledger-*.json
+ledger*.json
+painel-config.json
+
+# Logs
+diagnostico.log
+painel.log
+
+# Dependências e artefatos de instalação
+node_modules/
+package.json
+package-lock.json
+
+# Backup criado pelo ATUALIZAR.bat
+versao-anterior/
+
+# Pacotes de distribuição (vão em Releases, não no repositório)
+*.zip
+
+# Material de teste gerado
+testes/fotos*/
+testes/node_modules/
