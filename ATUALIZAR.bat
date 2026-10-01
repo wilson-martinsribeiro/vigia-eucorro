@@ -6,7 +6,7 @@ cd /d "%~dp0"
 rem Se a extracao criou uma pasta dentro da outra, entra nela sozinho
 if not exist "painel.mjs" if exist "automacao-eucorro\painel.mjs" cd /d "%~dp0automacao-eucorro"
 
-set REPO=https://raw.githubusercontent.com/wilsonribeiro-91/vigia-eucorro/main
+set REPO=https://raw.githubusercontent.com/wilson-martinsribeiro/vigia-eucorro/main
 set TMPD=%TEMP%\vigia-eucorro-update
 
 echo.
@@ -25,7 +25,7 @@ where curl >nul 2>nul
 if errorlevel 1 (
   echo   Este Windows nao tem o comando curl, necessario para baixar.
   echo   Baixe o ZIP novo direto da pagina do projeto:
-  echo   https://github.com/wilsonribeiro-91/vigia-eucorro
+  echo   https://github.com/wilson-martinsribeiro/vigia-eucorro
   echo.
   pause
   exit /b 1
@@ -112,7 +112,7 @@ exit /b 0
 echo.
 echo   O download nao veio completo. NADA foi alterado na sua pasta.
 echo   Tente de novo mais tarde, ou baixe o ZIP em:
-echo   https://github.com/wilsonribeiro-91/vigia-eucorro
+echo   https://github.com/wilson-martinsribeiro/vigia-eucorro
 echo.
 rd /s /q "%TMPD%" 2>nul
 pause

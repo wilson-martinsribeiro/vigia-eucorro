@@ -49,7 +49,7 @@ Não encosta no seu histórico de envios, no login salvo nem nas suas configura�
 a cópia antiga em `versao-anterior/` caso você precise voltar. Se o download falhar no meio,
 nada na pasta é alterado.
 
-Projeto: https://github.com/wilsonribeiro-91/vigia-eucorro
+Projeto: https://github.com/wilson-martinsribeiro/vigia-eucorro
 
 ---
 

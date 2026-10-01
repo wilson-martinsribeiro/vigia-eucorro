@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Mock Uploader EuCorro</title></head>
+<body>
+<h3 id="titulo">Furioso Extrema - Wilson Ribeiro (MOCK)</h3>
+<table><thead><tr><th>#</th><th>Arquivo</th><th>Data Foto</th><th>Status</th></tr></thead>
+<tbody id="corpo"><tr><td colspan="4">Nenhuma imagem</td></tr></tbody></table>
+<input type="file" id="fotos" multiple accept="image/*">
+<button type="button" id="limpa">Limpar</button>
+<button type="button" id="envia">ENVIAR</button>
+
+<script>
+// Replica o comportamento observado no uploader real do EuCorro:
+//  - a fila SUBSTITUI a cada selecao (nao acumula)
+//  - status evolui: (vazio) -> enviando -> processando -> sucesso
+//  - arquivos ja enviados antes voltam como "Repetida" (dedup do lado do servidor)
+window.__enviadas = new Set();   // "servidor": nomes ja recebidos
+window.__fila = [];
+
+const corpo = document.getElementById('corpo');
+
+function render() {
+  if (!window.__fila.length) { corpo.innerHTML = '<tr><td colspan="4">Nenhuma imagem</td></tr>'; return; }
+  corpo.innerHTML = window.__fila.map((f, i) =>
+    `<tr><td>${i+1}</td><td>${f.nome}</td><td>—</td><td>${f.status}</td></tr>`).join('');
+}
+
+document.getElementById('fotos').addEventListener('change', e => {
+  // SUBSTITUI, nao acumula — igual ao real
+  window.__fila = [...e.target.files].map(f => ({ nome: f.name, status: '' }));
+  render();
+});
+
+document.getElementById('limpa').addEventListener('click', () => {
+  window.__fila = []; document.getElementById('fotos').value = ''; render();
+});
+
+document.getElementById('envia').addEventListener('click', async () => {
+  const PASSO = 4;   // processa em pequenos grupos, como o real
+  for (let i = 0; i < window.__fila.length; i += PASSO) {
+    const grupo = window.__fila.slice(i, i + PASSO);
+    grupo.forEach(f => f.status = 'enviando'); render();
+    await new Promise(r => setTimeout(r, 8));
+    grupo.forEach(f => f.status = 'processando'); render();
+    await new Promise(r => setTimeout(r, 8));
+    grupo.forEach(f => {
+      if (window.__enviadas.has(f.nome)) { f.status = 'Repetida'; }
+      else { window.__enviadas.add(f.nome); f.status = 'sucesso'; }
+    });
+    render();
+  }
+  window.__totalNoServidor = window.__enviadas.size;
+});
+</script>
+</body></html>
