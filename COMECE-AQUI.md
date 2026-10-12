@@ -10,8 +10,17 @@ Você exporta do Lightroom para uma pasta; ele observa a pasta e envia em blocos
 **1. Instale o Node.js.** Baixe a versão **LTS** em https://nodejs.org e instale com as
 opções padrão.
 
-**2. Extraia esta pasta na Área de Trabalho.** Deve ficar
-`Área de Trabalho\automacao-eucorro` com os arquivos dentro.
+**2. Baixe o programa.** Abra
+https://github.com/wilson-martinsribeiro/vigia-eucorro/releases/latest, procure a palavra
+**Assets** e clique no arquivo `automacao-eucorro-v4.2.zip`. Esse endereço sempre aponta
+para a versão mais nova.
+
+**2b. Extraia na Área de Trabalho.** Botão **direito** no arquivo baixado → **Extrair
+Tudo…** → aponte para a Área de Trabalho. Deve ficar `Área de Trabalho\automacao-eucorro`
+com os arquivos dentro.
+
+> Abrir o zip com duplo clique e arrastar um arquivo de dentro **não funciona** — precisa
+> extrair tudo.
 
 **3. Duplo clique em `INICIAR-PAINEL.bat`.** Na primeira vez ele instala sozinho o que
 falta — leva alguns minutos e aparece bastante texto na janela preta. É normal.
@@ -22,6 +31,21 @@ Quando terminar, o painel abre no navegador.
 **4. Entre na sua conta do EuCorro.** No painel, clique em **Carregar galerias**. Abre uma
 janela do Chrome pedindo login — faça o login normalmente ali. O programa percebe sozinho
 quando você terminar e traz suas provas para o menu. Ele lembra da sua conta daí em diante.
+
+---
+
+## No dia a dia
+
+1. Clique em **Escolher pasta…** e navegue até a pasta das fotos tratadas. Ele já conta as
+   fotos sozinho. Se a janela não abrir, dá para colar o caminho no campo direto.
+2. Escolha a prova no menu de galerias.
+3. Confira o total esperado e o tamanho do bloco (500 é um bom padrão).
+4. Clique em **Iniciar**. Pode sair de perto.
+
+Abaixo do log aparecem três números, medidos durante o envio: a velocidade com que o
+Lightroom está **exportando**, a velocidade do **upload** e a **estimativa de conclusão**.
+A estimativa só aparece depois do primeiro bloco — antes disso não há dado suficiente e
+qualquer número seria chute.
 
 ---
 
@@ -48,6 +72,10 @@ só se houver novidade.
 Não encosta no seu histórico de envios, no login salvo nem nas suas configurações, e guarda
 a cópia antiga em `versao-anterior/` caso você precise voltar. Se o download falhar no meio,
 nada na pasta é alterado.
+
+Ele precisa ficar **dentro** da pasta `automacao-eucorro`, ao lado do `INICIAR-PAINEL.bat`.
+Se estiver em outro lugar — na pasta Downloads, por exemplo — ele avisa na tela e não faz
+nada; é só mover e clicar de novo.
 
 Projeto: https://github.com/wilson-martinsribeiro/vigia-eucorro
 
@@ -77,7 +105,7 @@ pasta. Mande esse arquivo junto com o que você estava fazendo.
 **Em produção:** 9.993 fotos enviadas para a galeria FURIOSO EXTREMA, zero duplicados,
 zero erros, com o Lightroom exportando em paralelo durante parte do envio.
 
-**Automatizado**, 37 verificações contra uma réplica do uploader do EuCorro:
+**Automatizado**, 49 verificações contra uma réplica do uploader do EuCorro:
 
 - **Motor (6):** 1.200 fotos com a pasta crescendo durante o envio → cobertura completa
   de 1 a 1.200, zero duplicados · para exato no total pedido e avisa se sobrou arquivo
@@ -90,5 +118,14 @@ zero erros, com o Lightroom exportando em paralelo durante parte do envio.
   corretamente, avisa no log qual navegador abriu, e traduz a falha para linguagem clara
   na tela em vez de mostrar código de erro
 
-**Ainda não verificado:** se o EuCorro aceita janela oculta — por isso ela vem visível —
-e se a tabela de status dele renderiza todas as linhas de um bloco grande de uma vez.
+- **Métricas (10):** velocidade de exportação medida em 596 fotos/min contra 600 reais ·
+  velocidade de upload medida · estimativa no formato correto, caindo até zero conforme
+  avança · exportação marcada como concluída no fim · os dados de medição nunca aparecem
+  no log da tela nem sujam o diagnóstico
+- **Escolher pasta (8):** responde sem travar, recusa durante um envio, e quando a janela
+  não pode abrir a tela ensina a colar o caminho em vez de mostrar erro técnico
+
+**Ainda não verificado:** se o EuCorro aceita janela oculta — por isso ela vem visível;
+se a tabela de status dele renderiza todas as linhas de um bloco grande de uma vez; e o
+botão **Escolher pasta**, que nunca rodou num Windows real — foi escrito e revisado, mas
+o ambiente de teste é Linux. Por isso o campo de texto continua aceitando o caminho colado.

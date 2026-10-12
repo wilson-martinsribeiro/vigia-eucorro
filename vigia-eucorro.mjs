@@ -47,6 +47,18 @@ const T_ESTAG   = 10 * 60_000;
 
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 
+// Linha legivel por maquina, consumida pelo painel para calcular as velocidades.
+// O painel esconde estas linhas do log visivel. Prefixo curto para nao poluir o
+// diagnostico.log nem confundir quem abrir o arquivo na mao.
+const metrica = o => console.log('@@M ' + JSON.stringify({ t: Date.now(), ...o }));
+
+// Contagem barata da pasta (so readdir, sem stat) — usada para medir a velocidade
+// de exportacao logo apos um bloco, quando o numero medido antes do envio ja envelheceu.
+async function contarRapido() {
+  try { return (await fs.readdir(cfg.PASTA)).filter(f => /\.jpe?g$/i.test(f)).length; }
+  catch { return null; }
+}
+
 // ─── Ledger ──────────────────────────────────────────────────────────────────
 async function lerLedger() {
   try {
@@ -217,6 +229,7 @@ try {
 
   while (enviadas.size < cfg.ALVO) {
     const { novos, totalNaPasta } = await varrer(enviadas);
+    metrica({ pasta: totalNaPasta, env: enviadas.size, alvo: cfg.ALVO });
 
     if (totalNaPasta !== ultimoTotalPasta) { ultimoTotalPasta = totalNaPasta; ultimoCrescimento = Date.now(); }
     const paradoHa = Date.now() - ultimoCrescimento;
@@ -243,6 +256,8 @@ try {
 
     const seg = ((Date.now() - t0) / 1000).toFixed(0);
     log(`bloco ${blocos} OK em ${seg}s — ok=${r.ok} erro=${r.erro} | acumulado ${enviadas.size}/${cfg.ALVO}`);
+    metrica({ pasta: await contarRapido(), env: enviadas.size, alvo: cfg.ALVO,
+              bloco: r.ok, seg: Number(seg) });
 
     if (fecharResto && novos.length <= cfg.LOTE) {
       log('exportacao parada e resto enviado.');

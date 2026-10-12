@@ -45,6 +45,13 @@
   #log{background:#14140f;color:#d8d5c4;font:12px/1.6 var(--mono);padding:13px;border-radius:9px;
        height:230px;overflow:auto;white-space:pre-wrap;word-break:break-word}
   #log .ok{color:#8fce9b} #log .er{color:#f08d84} #log .at{color:#f0c674}
+  .metricas{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+  .metricas>div{flex:1;min-width:150px;background:var(--bg);border:1px solid var(--linha);
+    border-radius:9px;padding:9px 12px}
+  .metricas .rot{display:block;font-size:.72rem;color:var(--fraco);text-transform:uppercase;
+    letter-spacing:.05em;font-weight:600}
+  .metricas b{font-size:1.05rem;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .metricas .un{font-size:.78rem;color:var(--fraco);font-weight:400;letter-spacing:0}
   .pill{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:600;
     padding:3px 10px;border-radius:99px;background:var(--linha);color:var(--fraco)}
   .pill.on{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
@@ -95,6 +102,7 @@
       <label>Pasta das fotos tratadas</label>
       <input id="pasta" placeholder="C:\Users\voce\Desktop\NOME DA PROVA\TRATADAS\LOTE 1">
       <div class="aux">
+        <button type="button" id="btEscolher">Escolher pasta…</button>
         <button type="button" id="btContar">Contar fotos da pasta</button>
         <span class="dica" id="contagem"></span>
       </div>
@@ -137,6 +145,11 @@
       </div>
       <div class="barra"><i id="barra"></i></div>
       <div id="log">aguardando…</div>
+      <div class="metricas">
+        <div><span class="rot">Exportação</span><b id="mExp">—</b></div>
+        <div><span class="rot">Upload</span><b id="mUp">—</b></div>
+        <div><span class="rot">Conclusão em</span><b id="mEta">—</b></div>
+      </div>
     </div>
   </div>
 
@@ -156,43 +169,75 @@
       <div class="passo"><div class="n">1</div><div class="c">
         <p><b>Instale o Node.js</b></p>
         <p class="det">Baixe a versão <b>LTS</b> em <code>nodejs.org</code> e instale com as opções
-        padrão (Avançar até o fim). É o motor que faz o programa rodar.</p>
+        padrão (Avançar até o fim). É o motor que faz o programa rodar. Só uma vez por computador.</p>
       </div></div>
 
       <div class="passo"><div class="n">2</div><div class="c">
-        <p><b>Coloque a pasta na Área de Trabalho</b></p>
-        <p class="det">Extraia o arquivo <code>automacao-eucorro.zip</code> direto na sua Área de
-        Trabalho. Deve ficar uma pasta chamada <code>automacao-eucorro</code> com quatro arquivos
-        dentro.</p>
+        <p><b>Baixe o programa</b></p>
+        <p class="det">Abra <code>github.com/wilson-martinsribeiro/vigia-eucorro/releases/latest</code>,
+        procure a palavra <b>Assets</b> e clique no arquivo <code>automacao-eucorro-v4.2.zip</code>.
+        Esse endereço sempre aponta para a versão mais nova — vale salvar nos favoritos.</p>
       </div></div>
 
       <div class="passo"><div class="n">3</div><div class="c">
+        <p><b>Extraia na Área de Trabalho</b></p>
+        <p class="det">Clique com o <b>botão direito</b> no arquivo baixado e escolha
+        <b>Extrair Tudo…</b>, apontando para a Área de Trabalho. Vai aparecer a pasta
+        <code>automacao-eucorro</code>.</p>
+        <p class="det">Abrir o zip com duplo clique e arrastar um arquivo de dentro
+        <b>não funciona</b> — precisa extrair tudo.</p>
+      </div></div>
+
+      <div class="passo"><div class="n">4</div><div class="c">
         <p><b>Duplo clique em <code>INICIAR-PAINEL.bat</code></b></p>
         <p class="det">Na primeira vez ele instala sozinho o que falta — leva alguns minutos e
         aparece bastante texto na janela preta. É normal. Quando terminar, esta tela abre no
         navegador. <b>Deixe a janela preta aberta</b> enquanto estiver usando.</p>
       </div></div>
 
-      <div class="passo"><div class="n">4</div><div class="c">
+      <div class="passo"><div class="n">5</div><div class="c">
         <p><b>Entre na sua conta do EuCorro (só uma vez)</b></p>
         <p class="det">Vá na aba <b>Enviar fotos</b> e clique em <b>Carregar galerias</b>. Vai abrir
-        uma janela do Chrome limpa, pedindo login. <b>Faça o login normalmente nessa janela</b>,
+        uma janela de navegador limpa, pedindo login. <b>Faça o login normalmente nessa janela</b>,
         como você faria no site. O programa percebe sozinho quando você terminar e traz suas provas
         para o menu.</p>
         <p class="det">A partir daí ele lembra da sua conta — você não precisa logar de novo.</p>
       </div></div>
 
+      <h2>Mantendo atualizado</h2>
+      <p class="det" style="color:var(--fraco);font-size:.9rem;margin-top:0">
+        Duplo clique em <code>ATUALIZAR.bat</code>, na mesma pasta. Ele compara a sua versão com a
+        publicada e baixa só se houver novidade; se não houver, avisa e fecha.
+      </p>
+      <p class="det" style="color:var(--fraco);font-size:.9rem">
+        Pode clicar sem medo e quantas vezes quiser: <b>nunca mexe no seu login, no histórico de
+        envios nem nas suas configurações</b>, e se o download falhar no meio ele não altera nada.
+        A versão anterior fica guardada na pasta <code>versao-anterior</code>.
+      </p>
+      <p class="det" style="color:var(--fraco);font-size:.9rem">
+        Se ele disser que está na pasta errada, é porque precisa ficar <b>dentro</b> da
+        <code>automacao-eucorro</code>, ao lado do <code>INICIAR-PAINEL.bat</code>. Mova e clique de novo.
+      </p>
+
       <h2>Usando no dia a dia</h2>
       <ol style="color:var(--fraco);font-size:.9rem">
-        <li>Cole o caminho da pasta das fotos tratadas e clique em <b>Contar fotos da pasta</b>.</li>
+        <li>Clique em <b>Escolher pasta…</b> e navegue até a pasta das fotos tratadas. Ele já conta
+            as fotos sozinho.</li>
         <li>Escolha a prova no menu de galerias.</li>
         <li>Confira o total esperado e o tamanho do bloco (500 é um bom padrão).</li>
         <li>Clique em <b>Iniciar</b> e acompanhe a barra. Pode fechar a aba do navegador —
             o envio continua enquanto a janela preta estiver aberta.</li>
       </ol>
       <p class="det" style="color:var(--fraco);font-size:.9rem">
-        <b>Dica para achar o caminho da pasta:</b> abra a pasta no Explorador de Arquivos,
-        clique na barra de endereço no topo e copie o texto que aparece.
+        Abaixo do log aparecem três números, medidos durante o envio: a velocidade com que o
+        Lightroom está <b>exportando</b>, a velocidade do <b>upload</b> e a <b>estimativa de
+        conclusão</b>. A estimativa só aparece depois do primeiro bloco — antes disso não há dado
+        suficiente e qualquer número seria chute.
+      </p>
+      <p class="det" style="color:var(--fraco);font-size:.9rem">
+        <b>Se o botão Escolher pasta não abrir a janela:</b> dá para colar o caminho no campo
+        direto. Abra a pasta no Explorador de Arquivos, clique na barra de endereço no topo e
+        copie o texto que aparece.
       </p>
 
       <h2>Se algo der errado</h2>
@@ -231,13 +276,20 @@ Programa local que sobe fotos de corrida em massa para o eucorro.com sem a pesso
 ficar no computador. O fotógrafo exporta do Lightroom para uma pasta; o programa
 observa a pasta e envia ao EuCorro em blocos (padrão 500) até atingir o total esperado.
 
+REPOSITÓRIO (fonte oficial)
+https://github.com/wilson-martinsribeiro/vigia-eucorro
+O programa NÃO roda hospedado: o repositório só guarda, distribui e atualiza.
+Ver "POR QUE PLAYWRIGHT RODANDO LOCAL" abaixo para o motivo.
+
 ARQUIVOS (pasta automacao-eucorro, na Área de Trabalho)
 - INICIAR-PAINEL.bat .. duplo clique; instala dependências na 1ª vez e sobe o painel
+- ATUALIZAR.bat ...... baixa a versão nova do repositório
 - painel.mjs ......... servidor Node em 127.0.0.1:4599 (API, lista galerias,
-                       inicia/para o vigia, log ao vivo por SSE)
+                       inicia/para o vigia, log ao vivo por SSE, métricas)
 - painel.html ........ a interface
 - vigia-eucorro.mjs .. o motor: Playwright dirigindo o Chrome instalado num perfil
                        dedicado (ou o Chromium do Playwright, se não houver Chrome)
+- VERSAO.txt ......... versão instalada; o ATUALIZAR.bat compara com a do repositório
 - ledger-<id>.json ... histórico de fotos já enviadas, por galeria
 - diagnostico.log .... saída técnica detalhada
 
@@ -266,7 +318,35 @@ SALVAGUARDAS JÁ IMPLEMENTADAS (não remover sem motivo)
 - Reconhecimento de status por exclusão, não por lista de palavras
 - Reserva de navegador: tenta o Chrome instalado e, se não houver, usa o Chromium
   que o Playwright baixa na instalação. Sem nenhum dos dois, sai com código 4 e
-  explica o que instalar (antes disso, máquina sem Chrome falhava sem dizer por quê)
+  explica o que instalar
+- ATUALIZAR.bat recusa rodar fora da pasta do programa (antes, clicado na pasta
+  Downloads, baixava tudo ali em silêncio); baixa para pasta temporária e só
+  substitui depois de conferir tamanho E conteúdo; qualquer falha não altera nada
+- ATUALIZAR.bat não se substitui a si mesmo: o cmd.exe relê o .bat por offset de
+  byte, então sobrescrever um .bat em execução é imprevisível
+
+MÉTRICAS (velocidade de exportação, de upload e estimativa)
+O vigia imprime linhas "@@M {json}" com {t, pasta, env, alvo, bloco?, seg?}. O painel
+intercepta essas linhas em painel.mjs, esconde do log visível e do diagnostico.log, e
+calcula em calcularMetricas():
+- upload: fotos/seg dos últimos 5 blocos concluídos
+- exportação: crescimento da contagem da pasta numa janela móvel de 5 min,
+  exigindo pelo menos 10s entre a primeira e a última amostra
+- estimativa: max(tempo para subir o que falta, tempo para exportar o que falta +
+  um último bloco), porque exportação e upload rodam em paralelo
+Janela MÓVEL de propósito: média desde o início fica envenenada para sempre por uma
+pausa no começo. A estimativa só aparece depois do 1º bloco; antes mostra "calculando".
+
+ESCOLHER PASTA
+Navegador nenhum entrega o caminho absoluto de uma pasta escolhida — é trava de
+segurança, não limitação do código. Como o painel tem um servidor na máquina da
+pessoa, o endpoint /api/escolher-pasta abre um FolderBrowserDialog via PowerShell
+(-STA, com um Form TopMost como dono, senão a janela abre atrás do navegador) e
+devolve o caminho. Fora do Windows devolve SO_NAO_SUPORTADO. O campo de texto
+continua funcionando como saída de emergência — não remover.
+
+CÓDIGOS DE SAÍDA DO VIGIA
+0 tudo certo · 2 precisa fazer login · 3 falta configuração · 4 nenhum navegador
 
 DECISÃO TOMADA
 Sem campos de login e senha no painel. O perfil dedicado do Chrome já persiste a
@@ -280,11 +360,14 @@ JÁ VALIDADO EM PRODUÇÃO
 AINDA NÃO VERIFICADO
 - Se o EuCorro tolera modo headless (hoje roda com janela visível, que é o seguro)
 - Se a tabela de status é virtualizada com muitas linhas (afetaria a contagem por DOM)
+- O /api/escolher-pasta nunca rodou num Windows real: foi escrito e revisado, mas o
+  ambiente de teste é Linux. Só o caminho de recusa elegante foi exercitado.
 
 COMO PEDIR EVOLUÇÕES
 Descreva o que quer mudar. Peça sempre que o Claude (1) TESTE a alteração contra um
 mock do uploader antes de entregar e (2) confira o hash do arquivo depois de gravar
-no disco — já aconteceu de a gravação reportar sucesso com conteúdo antigo.`;
+no disco — já aconteceu de a gravação reportar sucesso com conteúdo antigo.
+As suítes de teste estão na pasta testes/ do repositório.`;
 
 $('#btCopiar').onclick = async () => {
   const t = $('#ctx');
@@ -326,6 +409,7 @@ function pintarEstado(e){
   $('#btIniciar').disabled = on;
   $('#btParar').disabled = !on;
   $('#btGalerias').disabled = on;
+  $('#btEscolher').disabled = on;
   ['pasta','galeria','alvo','lote'].forEach(id => $('#'+id).disabled = on);
   const alvo = e.cfg?.alvo || Number($('#alvo').value) || 0;
   const env = e.enviadas || 0;
@@ -333,10 +417,49 @@ function pintarEstado(e){
   $('#nAlvo').textContent = alvo ? alvo.toLocaleString('pt-BR') : '—';
   const p = alvo ? Math.min(100, Math.round(env/alvo*100)) : 0;
   $('#barra').style.width = p+'%'; $('#pct').textContent = p+'%';
+  pintarMetricas(e.metricas, on);
+}
+
+// Numeros medidos, nao prometidos: enquanto nao houver dado suficiente a tela diz
+// que esta medindo, em vez de mostrar um valor que vai mudar muito no minuto seguinte.
+const taxa = v => `${Math.round(v).toLocaleString('pt-BR')}<span class="un"> fotos/min</span>`;
+function pintarMetricas(m, rodando){
+  if (!m) m = {};
+  $('#mExp').innerHTML =
+      m.estadoExport === 'concluida' ? 'concluída'
+    : m.exportacao > 0               ? taxa(m.exportacao)
+    : m.estadoExport === 'parada'    ? 'parada'
+    : rodando                        ? 'medindo…' : '—';
+  $('#mUp').innerHTML  = m.upload > 0 ? taxa(m.upload) : (rodando ? 'medindo…' : '—');
+  $('#mEta').innerHTML =
+      m.eta                          ? m.eta
+    : !rodando                       ? '—'
+    : m.estadoExport === 'parada'    ? 'exportação parada'
+    : 'calculando…';
 }
 async function atualizar(){
   try { pintarEstado(await (await fetch('/api/estado')).json()); } catch {}
 }
+
+$('#btEscolher').onclick = async () => {
+  const b = $('#btEscolher'); b.disabled = true; b.textContent = 'escolhendo…';
+  msg('Abriu a janela do Windows para escolher a pasta. Se ela não aparecer, procure na barra de tarefas.','ok');
+  try {
+    const r = await (await fetch('/api/escolher-pasta')).json();
+    if (r.pasta) {
+      $('#pasta').value = r.pasta;
+      msg('');
+      b.disabled = false; b.textContent = 'Escolher pasta…';
+      return $('#btContar').click();            // ja conta as fotos, poupa um clique
+    }
+    msg(r.cancelado ? ''
+      : r.erro === 'OCUPADO'          ? 'Pare o envio antes de trocar a pasta.'
+      : r.erro === 'TEMPO_ESGOTADO'   ? 'A janela ficou aberta tempo demais. Clique de novo.'
+      : 'Não consegui abrir a janela de pastas neste computador. Cole o caminho no campo acima — '
+        + 'abra a pasta no Explorador, clique na barra de endereço e copie o texto.', r.cancelado ? '' : 'er');
+  } catch { msg('Não consegui abrir a janela de pastas. Cole o caminho no campo acima.','er'); }
+  b.disabled = false; b.textContent = 'Escolher pasta…';
+};
 
 $('#btContar').onclick = async () => {
   const pasta = $('#pasta').value.trim();

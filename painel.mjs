@@ -8,7 +8,7 @@ import http from 'node:http';
 import fs from 'node:fs/promises';
 import fss from 'node:fs';
 import path from 'node:path';
-import { spawn, exec } from 'node:child_process';
+import { spawn, exec, execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const AQUI   = path.dirname(fileURLToPath(import.meta.url));
@@ -20,6 +20,7 @@ let proc = null;                 // processo do vigia
 let linhas = [];                 // ultimas linhas de log
 let clientes = [];               // conexoes SSE
 let estado = { rodando: false, iniciadoEm: null, ultimoErro: null };
+let metricas = [];               // amostras @@M vindas do vigia
 
 const agora = () => new Date().toISOString().slice(11, 19);
 
@@ -28,6 +29,68 @@ function emitir(linha) {
   linhas.push(l);
   if (linhas.length > 400) linhas = linhas.slice(-400);
   for (const c of clientes) { try { c.write(`data: ${JSON.stringify(l)}\n\n`); } catch {} }
+}
+
+// ─── Velocidades e estimativa ────────────────────────────────────────────────
+// Tres numeros, cada um com a sua fonte:
+//   exportacao — crescimento da pasta ao longo do tempo (janela movel)
+//   upload     — fotos por minuto DURANTE os blocos ja concluidos
+//   estimativa — o que terminar por ultimo: exportar o que falta, ou subir o que falta
+//
+// Janela movel de proposito: media desde o inicio fica envenenada para sempre por
+// uma pausa no comeco, e foi assim que eu ja errei estimativa neste projeto.
+const JANELA_MS = 5 * 60_000;
+const hhmmss = ms => {
+  const t = Math.max(0, Math.round(ms / 1000));
+  return [t/3600, t%3600/60, t%60].map(n => String(Math.floor(n)).padStart(2,'0')).join(':');
+};
+
+function calcularMetricas() {
+  const lote = Number(estado.cfg?.lote) || 0;
+  const fim = { exportacao: null, upload: null, eta: null, estadoExport: 'medindo' };
+  if (!metricas.length) return fim;
+
+  const ultima = metricas[metricas.length - 1];
+  const alvo = ultima.alvo || 0;
+
+  // ── upload: so blocos concluidos, os 5 mais recentes
+  const blocos = metricas.filter(m => m.bloco > 0 && m.seg > 0).slice(-5);
+  if (blocos.length) {
+    const fotos = blocos.reduce((a, m) => a + m.bloco, 0);
+    const seg   = blocos.reduce((a, m) => a + m.seg, 0);
+    if (seg > 0) fim.upload = fotos / seg * 60;
+  }
+
+  // ── exportacao: crescimento da pasta na janela movel
+  const agora = ultima.t;
+  let janela = metricas.filter(m => typeof m.pasta === 'number' && agora - m.t <= JANELA_MS);
+  if (janela.length < 2) janela = metricas.filter(m => typeof m.pasta === 'number');
+  if (janela.length >= 2) {
+    const a = janela[0], b = janela[janela.length - 1];
+    // Precisa de pelo menos 10s entre a primeira e a ultima amostra: abaixo disso o
+    // numero oscila demais e a pessoa ve a velocidade pulando sem sentido.
+    const ms = b.t - a.t;
+    if (ms >= 10_000) fim.exportacao = Math.max(0, (b.pasta - a.pasta) / (ms / 60_000));
+  }
+  const naPasta = typeof ultima.pasta === 'number' ? ultima.pasta : null;
+  if (naPasta !== null && alvo && naPasta >= alvo) { fim.estadoExport = 'concluida'; fim.exportacao = null; }
+  else if (fim.exportacao === 0) fim.estadoExport = 'parada';
+  else if (fim.exportacao !== null) fim.estadoExport = 'medindo';
+
+  // ── estimativa: so depois do primeiro bloco, senao e chute
+  if (fim.upload > 0 && alvo) {
+    const faltaSubir = Math.max(0, alvo - ultima.env);
+    const tSubir = faltaSubir / fim.upload;                       // minutos
+    const faltaExportar = naPasta === null ? 0 : Math.max(0, alvo - naPasta);
+    if (faltaExportar > 0 && !(fim.exportacao > 0)) {
+      fim.eta = null;                                             // exportacao parada: nao da para prever
+    } else {
+      const tExportar = faltaExportar > 0 ? faltaExportar / fim.exportacao : 0;
+      const ultimoBloco = Math.min(lote || faltaSubir, faltaSubir) / fim.upload;
+      fim.eta = hhmmss(Math.max(tSubir, tExportar + ultimoBloco) * 60_000);
+    }
+  }
+  return fim;
 }
 
 function json(res, code, obj) {
@@ -116,6 +179,37 @@ async function lerGalerias() {
   }
 }
 
+// ─── Janela nativa para escolher a pasta ─────────────────────────────────────
+// O navegador nunca entrega o caminho absoluto de uma pasta escolhida — e trava de
+// seguranca, nao limitacao do codigo. Mas este servidor roda na maquina da pessoa,
+// entao ELE pode abrir a janela do Windows e devolver o caminho para a tela.
+// Em qualquer outro sistema devolve SO_NAO_SUPORTADO e a tela manda colar o caminho.
+function escolherPasta() {
+  return new Promise(resolve => {
+    if (process.platform !== 'win32') return resolve({ erro: 'SO_NAO_SUPORTADO' });
+    const ps = [
+      'Add-Type -AssemblyName System.Windows.Forms',
+      '$d = New-Object System.Windows.Forms.FolderBrowserDialog',
+      "$d.Description = 'Escolha a pasta das fotos tratadas'",
+      '$d.ShowNewFolderButton = $false',
+      // Sem um dono TopMost a janela abre ATRAS do navegador e parece que travou.
+      '$t = New-Object System.Windows.Forms.Form',
+      '$t.TopMost = $true',
+      'if ($d.ShowDialog($t) -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $d.SelectedPath }',
+      '$t.Dispose()',
+    ].join('; ');
+    execFile('powershell.exe', ['-NoProfile', '-STA', '-Command', ps],
+      { timeout: 5 * 60_000, windowsHide: true },
+      (err, stdout) => {
+        if (err && err.killed) return resolve({ erro: 'TEMPO_ESGOTADO' });
+        if (err) { emitir('nao consegui abrir a janela de pastas: ' + (err.message || '').split('\n')[0]);
+                   return resolve({ erro: 'SEM_DIALOGO' }); }
+        const caminho = String(stdout || '').trim();
+        resolve(caminho ? { pasta: caminho } : { cancelado: true });
+      });
+  });
+}
+
 // ─── Inicia / para o vigia ───────────────────────────────────────────────────
 function iniciar(cfg) {
   if (proc) throw new Error('JA_RODANDO');
@@ -136,6 +230,7 @@ function iniciar(cfg) {
   if (process.env.VE_STALL)  env.VE_STALL  = process.env.VE_STALL;
 
   linhas = [];
+  metricas = [];
   emitir(`Iniciando: ${cfg.alvo} fotos, blocos de ${cfg.lote}, galeria ${cfg.idGaleria}`);
   emitir(`Pasta: ${cfg.pasta}`);
 
@@ -155,8 +250,17 @@ function iniciar(cfg) {
       buf += d.toString();
       const partes = buf.split('\n'); buf = partes.pop();
       for (const l of partes.filter(Boolean)) {
-        bruto.write(l + '\n');
         const limpa = l.replace(/\x1b\[\d+m/g, '').replace(/^\d\d:\d\d:\d\d /, '');
+        // Amostras de medicao: alimentam os numeros, nunca aparecem no log da tela
+        // nem sujam o diagnostico.log.
+        if (limpa.startsWith('@@M ')) {
+          try {
+            metricas.push(JSON.parse(limpa.slice(4)));
+            if (metricas.length > 400) metricas = metricas.slice(-400);
+          } catch {}
+          continue;
+        }
+        bruto.write(l + '\n');
         if (!ruido(limpa)) emitir(limpa);
       }
     });
@@ -200,13 +304,18 @@ const servidor = http.createServer(async (req, res) => {
           enviadas = j.total_enviadas || (j.enviadas || []).length;
         } catch {}
       }
-      return json(res, 200, { ...estado, enviadas, linhas: linhas.slice(-200) });
+      return json(res, 200, { ...estado, enviadas, metricas: calcularMetricas(), linhas: linhas.slice(-200) });
     }
 
     if (u.pathname === '/api/contar') {
       const pasta = u.searchParams.get('pasta') || '';
       try { return json(res, 200, { total: await contarPasta(pasta) }); }
       catch (e) { return json(res, 400, { erro: 'Pasta nao encontrada' }); }
+    }
+
+    if (u.pathname === '/api/escolher-pasta') {
+      if (proc) return json(res, 400, { erro: 'OCUPADO' });
+      return json(res, 200, await escolherPasta());
     }
 
     if (u.pathname === '/api/galerias') {

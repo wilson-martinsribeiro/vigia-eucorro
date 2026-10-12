@@ -1,5 +1,35 @@
 # Histórico de versões
 
+## 4.2 — 12/10/2026
+
+### Aba "Enviar fotos"
+
+- **Botão "Escolher pasta…"**, ao lado do campo de caminho. Navegador nenhum entrega o
+  caminho absoluto de uma pasta escolhida — é trava de segurança, não limitação do código.
+  Como o painel tem um servidor na máquina da pessoa, o novo `/api/escolher-pasta` abre um
+  `FolderBrowserDialog` via PowerShell e devolve o caminho. Aditivo de propósito: o campo
+  de texto continua aceitando o caminho colado, então se a janela falhar nada quebra.
+  **Única coisa do projeto entregue sem rodar no ambiente alvo** — o teste aqui é Linux, e
+  só o caminho de recusa elegante foi exercitado.
+- **Três números abaixo do log:** velocidade de exportação do Lightroom, velocidade de
+  upload e estimativa de conclusão em HH:MM:SS, atualizados ao vivo.
+  - O vigia passou a imprimir amostras `@@M {json}`, que o painel intercepta e esconde do
+    log visível e do `diagnostico.log`.
+  - Upload sai dos últimos 5 blocos concluídos; exportação, do crescimento da pasta numa
+    **janela móvel** de 5 min — média desde o início fica envenenada para sempre por uma
+    pausa no começo, que foi exatamente como eu já errei estimativa neste projeto.
+  - A estimativa só aparece **depois do primeiro bloco**; antes disso mostra "calculando".
+    Medido no teste: 596 fotos/min contra 600 reais de exportação.
+
+### Aba "Começar aqui"
+
+- "Instalando do zero" reescrito para o fluxo real: baixar pelo link de Releases, extrair,
+  Node.js, primeiro login. Mais uma seção "Mantendo atualizado" com o `ATUALIZAR.bat`.
+- Bloco de contexto para o Claude atualizado: endereço do repositório, protocolo das
+  métricas, o porquê do `/api/escolher-pasta`, códigos de saída e o que segue não testado.
+- `COMECE-AQUI.md` e `README.md` atualizados junto — a história da instalação vive em três
+  lugares e divergir é como a pessoa acaba lendo instrução de uma versão que não tem.
+
 ## 4.1 — 01/10/2026
 
 - **`ATUALIZAR.bat`**: atualiza o programa a partir deste repositório com um duplo clique.

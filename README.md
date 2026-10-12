@@ -28,7 +28,7 @@ distribuir e atualizar** o programa — não para executá-lo.
 ## Instalar (uma vez só)
 
 1. Instale o **Node.js LTS**: https://nodejs.org
-2. Baixe este projeto: botão verde **Code** → **Download ZIP**
+2. Baixe o pacote pronto em [**Releases**](https://github.com/wilson-martinsribeiro/vigia-eucorro/releases/latest) → **Assets** → `automacao-eucorro-v4.2.zip`
 3. **Extraia tudo** na Área de Trabalho (botão direito no ZIP → Extrair Tudo).
    Abrir o ZIP e arrastar um arquivo de dentro **não funciona**.
 4. Duplo clique em **`INICIAR-PAINEL.bat`**
@@ -57,7 +57,7 @@ guarda a cópia antiga em `versao-anterior/` caso você precise voltar.
 | Arquivo | Para que serve |
 |---|---|
 | `INICIAR-PAINEL.bat` | Duplo clique. Instala o necessário na 1ª vez e abre o painel. |
-| `ATUALIZAR.bat` | Duplo clique. Baixa a versão nova daqui. |
+| `ATUALIZAR.bat` | Duplo clique. Baixa a versão nova daqui. Recusa rodar fora da pasta do programa. |
 | `COMECE-AQUI.md` | O passo a passo em texto. |
 | `painel.html` | A tela: aba **Enviar fotos** e aba **Começar aqui**. |
 | `painel.mjs` | Servidor local em `127.0.0.1:4599`. Lista galerias, inicia e para o envio, mostra o log ao vivo. |
@@ -104,10 +104,12 @@ Funciona de qualquer jeito. A ordem é:
 | Pasta com mais arquivos que o esperado | Para exato no total pedido e avisa da sobra |
 | Perfil de navegador ocupado | O painel bloqueia "carregar galerias" com o envio rodando |
 | Máquina sem Chrome | Cai para o Chromium; sem nenhum, sai com código 4 explicando |
+| `ATUALIZAR.bat` clicado solto na pasta Downloads | Recusa e explica como mover, em vez de baixar o programa ali |
+| Download da atualização falha no meio | Baixa para pasta temporária e confere tamanho e conteúdo antes de substituir; na dúvida não altera nada |
 
 ## Testes
 
-**37 verificações automatizadas**, todas passando, rodadas contra os arquivos extraídos do
+**49 verificações automatizadas**, todas passando, rodadas contra os arquivos extraídos do
 pacote de distribuição — não contra a cópia de trabalho. Playwright real contra uma
 réplica do uploader do EuCorro (fila que **substitui** a cada seleção, status
 `enviando → processando → sucesso`, deduplicação do servidor).
@@ -120,12 +122,19 @@ réplica do uploader do EuCorro (fila que **substitui** a cada seleção, status
 - **Parar e retomar (7)** — histórico preservado no ponto exato, zero duplicados no fim
 - **Navegador (7)** — lista galerias pela reserva, lê nome e número da prova, avisa no log
   qual navegador abriu, traduz a falha na tela
+- **Métricas (10)** — velocidade de exportação medida em 596 fotos/min contra 600 reais,
+  velocidade de upload, estimativa em HH:MM:SS caindo até zero, exportação marcada como
+  concluída no fim, e as amostras de medição fora do log visível e do `diagnostico.log`
+- **Escolher pasta (8)** — responde sem travar, recusa durante um envio, e degrada para
+  "cole o caminho" quando a janela nativa não pode abrir
 
 Para rodar: `cd testes` e `node teste-painel.mjs` (precisa de `playwright` instalado e,
 no Linux, de `xvfb-run`).
 
 **Ainda não verificado:** se o EuCorro tolera janela oculta (hoje roda visível, que é o
-seguro) e se a tabela de status é virtualizada em blocos grandes. Os dois `.bat` são
+seguro); se a tabela de status é virtualizada em blocos grandes; e o `/api/escolher-pasta`,
+que **nunca rodou num Windows real** — o ambiente de teste é Linux, então só o caminho de
+recusa elegante foi exercitado. O campo de texto segue aceitando o caminho colado. Os dois `.bat` são
 conferidos por um lint dos erros clássicos de `cmd.exe`, mas não executados em CI — não
 há Windows no ambiente de teste.
 
@@ -153,6 +162,18 @@ motor na mão):
 
 Códigos de saída: `0` tudo certo · `2` precisa fazer login · `3` falta configuração ·
 `4` nenhum navegador disponível.
+
+**Métricas.** O vigia imprime linhas `@@M {json}` com `{t, pasta, env, alvo, bloco?, seg?}`.
+O painel intercepta, esconde do log visível e do `diagnostico.log`, e calcula em
+`calcularMetricas()`: upload pelos últimos 5 blocos, exportação pelo crescimento da pasta
+numa janela móvel de 5 min, e estimativa como `max(subir o que falta, exportar o que falta
++ um último bloco)`. Janela móvel de propósito — média desde o início fica envenenada por
+uma pausa no começo.
+
+**Escolher pasta.** Navegador nenhum entrega o caminho absoluto de uma pasta; é trava de
+segurança. Como o painel tem servidor local, `/api/escolher-pasta` abre um
+`FolderBrowserDialog` via PowerShell (`-STA`, com um `Form` TopMost como dono, senão a
+janela abre atrás do navegador). Fora do Windows devolve `SO_NAO_SUPORTADO`.
 
 ---
 
