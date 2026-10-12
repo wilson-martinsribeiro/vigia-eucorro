@@ -5,6 +5,19 @@ import fs from 'node:fs/promises';
 
 const AQUI = process.cwd();
 const BASE = 'http://127.0.0.1:4599';
+
+// Guarda: se algo ja responde nesta porta, o teste conversaria com OUTRO servidor —
+// possivelmente de outra pasta — e os resultados seriam falsos. Ja aconteceu.
+async function exigirPortaLivre(porta){
+  try { await fetch(`http://127.0.0.1:${porta}/api/estado`); }
+  catch { return; }
+  console.log(`\nERRO: ja existe um servidor respondendo em 127.0.0.1:${porta}.`);
+  console.log('Encerre-o antes de rodar este teste, senao o resultado nao vale.');
+  process.exit(2);
+}
+
+await exigirPortaLivre(4599);
+
 const ok = [], falhas = [];
 const checa = (nome, cond, detalhe = '') => {
   (cond ? ok : falhas).push(nome + (detalhe ? ` — ${detalhe}` : ''));

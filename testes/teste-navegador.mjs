@@ -6,7 +6,18 @@ const dorme = ms => new Promise(r => setTimeout(r, ms));
 const ok = [], fa = [];
 const checa = (n, c, d = '') => { (c ? ok : fa).push(n); console.log(`  ${c ? 'PASSA' : 'FALHA'}  ${n}${d ? ' — ' + d : ''}`); };
 
+// Guarda: se algo ja responde nesta porta, o teste conversaria com OUTRO servidor —
+// possivelmente de outra pasta — e os resultados seriam falsos. Ja aconteceu.
+async function exigirPortaLivre(porta){
+  try { await fetch(`http://127.0.0.1:${porta}/api/estado`); }
+  catch { return; }
+  console.log(`\nERRO: ja existe um servidor respondendo em 127.0.0.1:${porta}.`);
+  console.log('Encerre-o antes de rodar este teste, senao o resultado nao vale.');
+  process.exit(2);
+}
+
 async function comPainel(porta, envExtra, fn) {
+  await exigirPortaLivre(porta);
   const srv = spawn('xvfb-run', ['-a', process.execPath, 'painel.mjs'], {
     cwd: AQUI, stdio: ['ignore', 'pipe', 'pipe'],
     env: { ...process.env, PAINEL_SEM_ABRIR: '1', PAINEL_PORTA: String(porta),
