@@ -28,10 +28,10 @@ distribuir e atualizar** o programa — não para executá-lo.
 ## Instalar (uma vez só)
 
 1. Instale o **Node.js LTS**: https://nodejs.org
-2. Baixe o pacote pronto em [**Releases**](https://github.com/wilson-martinsribeiro/vigia-eucorro/releases/latest) → **Assets** → `automacao-eucorro-v4.3.zip`
+2. Baixe o pacote pronto em [**Releases**](https://github.com/wilson-martinsribeiro/vigia-eucorro/releases/latest) → **Assets** → `automacao-eucorro-v4.4.zip`
 3. **Extraia tudo** na Área de Trabalho (botão direito no ZIP → Extrair Tudo).
    Abrir o ZIP e arrastar um arquivo de dentro **não funciona**.
-4. Duplo clique em **`INICIAR-PAINEL.bat`**
+4. Duplo clique em **`INICIAR-VIGIA-EUCORRO.bat`**
 
 Na primeira vez ele instala sozinho o que falta — alguns minutos, com bastante texto na
 janela preta. É normal. Depois o painel abre no navegador.
@@ -56,8 +56,10 @@ guarda a cópia antiga em `versao-anterior/` caso você precise voltar.
 
 | Arquivo | Para que serve |
 |---|---|
-| `INICIAR-PAINEL.bat` | Duplo clique. Instala o necessário na 1ª vez e abre o painel. |
-| `ATUALIZAR.bat` | Duplo clique. Baixa a versão nova daqui. Recusa rodar fora da pasta do programa. |
+| `INICIAR-VIGIA-EUCORRO.bat` | Duplo clique. Instala o necessário na 1ª vez e abre o painel. |
+| `ATUALIZAR.bat` | Duplo clique. Baixa a versão nova daqui, para dentro de `programa/`. Recusa rodar fora da pasta. |
+| `programa/` | Tudo o mais: código, `VERSAO.txt`, e os dados locais (login, histórico, config, logs). A raiz fica com só os dois `.bat`. |
+| `programa/migrar.mjs` | Leva uma instalação antiga (tudo solto na raiz) para este layout, uma vez só. |
 | `COMECE-AQUI.md` | O passo a passo em texto. |
 | `painel.html` | A tela: aba **Enviar fotos** e aba **Começar aqui**. |
 | `painel.mjs` | Servidor local em `127.0.0.1:4599`. Lista galerias, inicia e para o envio, mostra o log ao vivo. |
@@ -110,7 +112,7 @@ Funciona de qualquer jeito. A ordem é:
 
 ## Testes
 
-**88 verificações automatizadas**, todas passando, rodadas contra os arquivos extraídos do
+**106 verificações automatizadas**, todas passando, rodadas contra os arquivos extraídos do
 pacote de distribuição — não contra a cópia de trabalho. Playwright real contra uma
 réplica do uploader do EuCorro (fila que **substitui** a cada seleção, status
 `enviando → processando → sucesso`, deduplicação do servidor).
@@ -128,6 +130,9 @@ réplica do uploader do EuCorro (fila que **substitui** a cada seleção, status
   concluída no fim, e as amostras de medição fora do log visível e do `diagnostico.log`
 - **Escolher pasta (9)** — responde sem travar, recusa durante um envio, e degrada para
   "cole o caminho" quando a janela nativa não pode abrir
+- **Migração da pasta (18):** instalação antiga com tudo solto na raiz → o ledger de 3.914
+  fotos e o login do EuCorro atravessam intactos · nada é apagado nem sobrescrito · rodar
+  duas vezes não faz nada · instalação nova fica em silêncio
 - **Pausa na exportação (10)** — a pasta para de crescer: não encerra, envia o resto e
   segue vigiando · volta a crescer: retoma sozinho até o alvo, cobertura completa e zero
   duplicados · a pausa é anunciada mesmo sem sobra na pasta

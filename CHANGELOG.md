@@ -1,5 +1,49 @@
 # Histórico de versões
 
+## 4.4 — 22/11/2026
+
+Três pedidos do Wilson, depois de usar a 4.3 em produção.
+
+### A raiz da pasta tinha 15+ arquivos técnicos
+
+"Nós, usuários, não sabemos para que serve, e isso polui a usabilidade." Justo: havia dez
+ledgers, `node_modules`, `package-lock.json`, perfil do navegador, logs.
+
+Agora a raiz tem **só `INICIAR-VIGIA-EUCORRO.bat` e `ATUALIZAR.bat`**. Todo o resto vai
+para `programa/`.
+
+`migrar.mjs` faz a mudança uma vez, chamado pelo INICIAR antes de subir o painel. A lógica
+ficou em **Node, não em `.bat`**, de propósito: mexer no ledger e no login da pessoa precisa
+de algo que eu consiga testar de verdade — e o `.bat` eu não consigo. **18 verificações**,
+incluindo um ledger de 3.914 fotos e o login do EuCorro atravessando intactos.
+
+Usa `rename` (atômico), **não apaga nada** e não sobrescreve destino que já existe. Os
+arquivos de programa antigos vão para `versao-anterior/antes-da-reorganizacao/`. Um teste
+pegou que o `rename` estava sobrescrevendo calado um backup anterior de mesmo nome.
+
+### `INICIAR-PAINEL` virou `INICIAR-VIGIA-EUCORRO`
+
+Nome do programa no arquivo que se clica.
+
+### Aba "Notificações"
+
+A configuração do ntfy saiu da aba "Enviar fotos" e ganhou aba própria — propósitos
+distintos, como o Wilson apontou.
+
+### "Escolher pasta": segunda tentativa
+
+**Não funcionou no Windows dele.** Era o único trecho do projeto entregue sem rodar no
+ambiente alvo, e falhou. Agora tenta dois caminhos — a janela clássica do Explorer (COM
+`Shell.Application`) e depois o `FolderBrowserDialog` — e, o que mais importa, **registra o
+erro real no `diagnostico.log`**. Antes o motivo só aparecia na tela e sumia, então não
+havia o que diagnosticar. Continuo sem Windows para testar; o campo de colar o caminho
+segue valendo.
+
+### Aviso para quem atualiza
+
+O `ATUALIZAR.bat` **não se atualiza**. Quem está na 4.3 ou antes tem um updater que baixa
+para a raiz: o layout novo só chega pelo ZIP ou por entrega manual dos dois `.bat`.
+
 ## 4.3 — 18/10/2026
 
 ### Pausar a exportação não encerra mais o programa

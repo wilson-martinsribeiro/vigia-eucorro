@@ -4,14 +4,18 @@ title Vigia EuCorro - atualizar
 cd /d "%~dp0"
 
 rem Se a extracao criou uma pasta dentro da outra, entra nela sozinho
-if not exist "painel.mjs" if exist "automacao-eucorro\painel.mjs" cd /d "%~dp0automacao-eucorro"
+if not exist "programa\painel.mjs" if exist "automacao-eucorro\programa\painel.mjs" cd /d "%~dp0automacao-eucorro"
+
+rem Desde a 4.4 os arquivos do programa vivem em programa\. Tudo que este arquivo
+rem faz (baixar, conferir, substituir, guardar backup) acontece la dentro.
+if exist "programa\painel.mjs" cd /d "%CD%\programa"
 
 rem Este arquivo ATUALIZA um programa ja instalado. Se for clicado solto
 rem (na pasta Downloads, por exemplo), nao pode sair baixando o programa ali.
 if not exist "painel.mjs" goto :lugarerrado
 if not exist "vigia-eucorro.mjs" goto :lugarerrado
 
-set REPO=https://raw.githubusercontent.com/wilson-martinsribeiro/vigia-eucorro/main
+set REPO=https://raw.githubusercontent.com/wilson-martinsribeiro/vigia-eucorro/main/programa
 set TMPD=%TEMP%\vigia-eucorro-update
 
 echo.
@@ -68,7 +72,7 @@ if "%ATUAL%"=="%NOVA%" (
 )
 
 echo   Baixando os arquivos...
-for %%f in (vigia-eucorro.mjs painel.mjs painel.html COMECE-AQUI.md INICIAR-PAINEL.bat) do (
+for %%f in (vigia-eucorro.mjs painel.mjs painel.html COMECE-AQUI.md migrar.mjs) do (
   curl -fsSL "%REPO%/%%f" -o "%TMPD%\%%f"
   if errorlevel 1 goto :falhou
   echo       %%f
@@ -76,7 +80,7 @@ for %%f in (vigia-eucorro.mjs painel.mjs painel.html COMECE-AQUI.md INICIAR-PAIN
 
 echo.
 echo   Conferindo o que foi baixado...
-for %%f in ("%TMPD%\vigia-eucorro.mjs" "%TMPD%\painel.mjs" "%TMPD%\painel.html" "%TMPD%\COMECE-AQUI.md" "%TMPD%\INICIAR-PAINEL.bat") do (
+for %%f in ("%TMPD%\vigia-eucorro.mjs" "%TMPD%\painel.mjs" "%TMPD%\painel.html" "%TMPD%\COMECE-AQUI.md" "%TMPD%\migrar.mjs") do (
   if not exist %%f goto :falhou
   if %%~zf LSS 500 goto :falhou
 )
@@ -87,11 +91,11 @@ if errorlevel 1 goto :falhou
 echo       tudo certo.
 
 if not exist "versao-anterior" mkdir "versao-anterior"
-for %%f in (vigia-eucorro.mjs painel.mjs painel.html COMECE-AQUI.md INICIAR-PAINEL.bat VERSAO.txt) do (
+for %%f in (vigia-eucorro.mjs painel.mjs painel.html COMECE-AQUI.md migrar.mjs VERSAO.txt) do (
   if exist "%%f" copy /y "%%f" "versao-anterior\%%f" >nul
 )
 
-for %%f in (vigia-eucorro.mjs painel.mjs painel.html COMECE-AQUI.md INICIAR-PAINEL.bat) do (
+for %%f in (vigia-eucorro.mjs painel.mjs painel.html COMECE-AQUI.md migrar.mjs) do (
   copy /y "%TMPD%\%%f" "%%f" >nul
   if errorlevel 1 goto :falhou
 )
@@ -127,11 +131,11 @@ echo   %CD%
 echo.
 echo   O QUE FAZER
 echo   1^) Recorte este arquivo ^(Ctrl+X^)
-echo   2^) Abra a pasta automacao-eucorro, onde voce usa o programa
+echo   2^) Abra a pasta automacao-eucorro, a mesma do INICIAR-VIGIA-EUCORRO
 echo   3^) Cole ali dentro ^(Ctrl+V^) e clique nele de novo
 echo.
-echo   A pasta certa e a que tem os arquivos painel.mjs,
-echo   vigia-eucorro.mjs e INICIAR-PAINEL.bat.
+echo   A pasta certa e a que tem o INICIAR-VIGIA-EUCORRO.bat
+echo   e a pasta "programa" ao lado.
 echo.
 pause
 exit /b 1
