@@ -28,7 +28,7 @@ distribuir e atualizar** o programa — não para executá-lo.
 ## Instalar (uma vez só)
 
 1. Instale o **Node.js LTS**: https://nodejs.org
-2. Baixe o pacote pronto em [**Releases**](https://github.com/wilson-martinsribeiro/vigia-eucorro/releases/latest) → **Assets** → `automacao-eucorro-v4.2.zip`
+2. Baixe o pacote pronto em [**Releases**](https://github.com/wilson-martinsribeiro/vigia-eucorro/releases/latest) → **Assets** → `automacao-eucorro-v4.3.zip`
 3. **Extraia tudo** na Área de Trabalho (botão direito no ZIP → Extrair Tudo).
    Abrir o ZIP e arrastar um arquivo de dentro **não funciona**.
 4. Duplo clique em **`INICIAR-PAINEL.bat`**
@@ -102,6 +102,7 @@ Funciona de qualquer jeito. A ordem é:
 | Um erro travar a espera | Fim é `ok + erro == total`, com vigia de estagnação |
 | O site mudar a palavra de status | Reconhecimento por exclusão, não por lista de sinônimos |
 | Pasta com mais arquivos que o esperado | Para exato no total pedido e avisa da sobra |
+| Exportação pausada no meio | Manda o resto e **continua vigiando** — só encerra por alvo, Parar ou erro |
 | Perfil de navegador ocupado | O painel bloqueia "carregar galerias" com o envio rodando |
 | Máquina sem Chrome | Cai para o Chromium; sem nenhum, sai com código 4 explicando |
 | `ATUALIZAR.bat` clicado solto na pasta Downloads | Recusa e explica como mover, em vez de baixar o programa ali |
@@ -109,7 +110,7 @@ Funciona de qualquer jeito. A ordem é:
 
 ## Testes
 
-**49 verificações automatizadas**, todas passando, rodadas contra os arquivos extraídos do
+**88 verificações automatizadas**, todas passando, rodadas contra os arquivos extraídos do
 pacote de distribuição — não contra a cópia de trabalho. Playwright real contra uma
 réplica do uploader do EuCorro (fila que **substitui** a cada seleção, status
 `enviando → processando → sucesso`, deduplicação do servidor).
@@ -125,8 +126,15 @@ réplica do uploader do EuCorro (fila que **substitui** a cada seleção, status
 - **Métricas (10)** — velocidade de exportação medida em 596 fotos/min contra 600 reais,
   velocidade de upload, estimativa em HH:MM:SS caindo até zero, exportação marcada como
   concluída no fim, e as amostras de medição fora do log visível e do `diagnostico.log`
-- **Escolher pasta (8)** — responde sem travar, recusa durante um envio, e degrada para
+- **Escolher pasta (9)** — responde sem travar, recusa durante um envio, e degrada para
   "cole o caminho" quando a janela nativa não pode abrir
+- **Pausa na exportação (10)** — a pasta para de crescer: não encerra, envia o resto e
+  segue vigiando · volta a crescer: retoma sozinho até o alvo, cobertura completa e zero
+  duplicados · a pausa é anunciada mesmo sem sobra na pasta
+- **Avisos (28)** — marcos nos números certos e uma vez só, com velocidade e tempo restante ·
+  "precisa de você" com prioridade urgente · **o envio conclui com o serviço de aviso fora do
+  ar**, reclamando uma única vez na tela · Parar não dispara aviso de erro · sem canal
+  configurado, zero requisições
 
 Para rodar: `cd testes` e `node teste-painel.mjs` (precisa de `playwright` instalado e,
 no Linux, de `xvfb-run`).
@@ -169,6 +177,13 @@ O painel intercepta, esconde do log visível e do `diagnostico.log`, e calcula e
 numa janela móvel de 5 min, e estimativa como `max(subir o que falta, exportar o que falta
 + um último bloco)`. Janela móvel de propósito — média desde o início fica envenenada por
 uma pausa no começo.
+
+**Avisos no celular (ntfy).** Escolhido por não exigir conta nem senha: o nome do tópico é a
+credencial e fica só no `painel-config.json` da máquina — a tela **sorteia** o nome em vez de
+deixar a pessoa inventar. Publicação em JSON no corpo, não por cabeçalho (cabeçalho HTTP não
+carrega acento). Vive inteiro em `painel.mjs`; o vigia não sabe que avisos existem.
+`verificarMarco()` conta pelo total acumulado, não por bloco. `aviso()` dispara e esquece com
+timeout de 8s — **um aviso que não sai nunca pode parar 10.000 fotos**.
 
 **Escolher pasta.** Navegador nenhum entrega o caminho absoluto de uma pasta; é trava de
 segurança. Como o painel tem servidor local, `/api/escolher-pasta` abre um

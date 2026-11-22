@@ -21,6 +21,59 @@ let linhas = [];                 // ultimas linhas de log
 let clientes = [];               // conexoes SSE
 let estado = { rodando: false, iniciadoEm: null, ultimoErro: null };
 let metricas = [];               // amostras @@M vindas do vigia
+let conf = {};                   // painel-config.json carregado em memoria
+try { conf = JSON.parse(fss.readFileSync(CONFIG, 'utf8')); } catch {}
+
+// ─── Avisos no celular (ntfy) ────────────────────────────────────────────────
+// Escolhido por nao exigir conta nem senha: o nome do topico E a credencial, e
+// fica so no painel-config.json desta maquina. Por isso a tela gera um nome
+// aleatorio em vez de deixar a pessoa inventar "wilson".
+//
+// Publicacao em JSON, nao por cabecalho HTTP: cabecalho nao carrega acento, e as
+// mensagens sao em portugues.
+const NTFY = (process.env.PAINEL_NTFY || 'https://ntfy.sh').replace(/\/+$/, '');
+let avisosDados = new Set();     // chaves ja avisadas nesta execucao
+let marcoAvisado = null;         // ultimo marco (em fotos) ja avisado
+let errosAvisados = 0;           // teto de avisos de bloco com erro
+let avisoFalhouNaTela = false;   // so reclama uma vez por execucao
+let pedidoParar = false;         // Parar nao e falha: nao avisa
+
+const diag = l => { try { fss.appendFileSync(path.join(AQUI, 'diagnostico.log'), l + '\n'); } catch {} };
+
+async function enviarAviso({ titulo, texto, prioridade = 3, tags = [] }, topico) {
+  const t = (topico || conf.avisoTopico || '').trim();
+  if (!t) return { erro: 'SEM_TOPICO' };
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 8_000);
+  try {
+    const r = await fetch(NTFY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic: t, title: titulo, message: texto, priority: prioridade, tags }),
+      signal: ac.signal,
+    });
+    if (!r.ok) return { erro: 'HTTP_' + r.status };
+    return { ok: true };
+  } catch (e) {
+    return { erro: (e.message || 'falhou').split('\n')[0] };
+  } finally { clearTimeout(timer); }
+}
+
+// Dispara e esquece. Um aviso que nao sai NUNCA pode parar 10.000 fotos, entao
+// a falha vai para o diagnostico.log e, uma unica vez por execucao, para a tela.
+function aviso(chave, msg) {
+  if (avisosDados.has(chave)) return;
+  avisosDados.add(chave);
+  enviarAviso(msg).then(r => {
+    if (!r.erro) return;
+    diag(`[aviso] ${chave}: ${r.erro}`);
+    if (r.erro !== 'SEM_TOPICO' && !avisoFalhouNaTela) {
+      avisoFalhouNaTela = true;
+      emitir('AVISO: nao consegui mandar a notificacao para o celular. O envio das fotos segue normal.');
+    }
+  }).catch(() => {});
+}
+
 
 const agora = () => new Date().toISOString().slice(11, 19);
 
@@ -44,6 +97,51 @@ const hhmmss = ms => {
   const t = Math.max(0, Math.round(ms / 1000));
   return [t/3600, t%3600/60, t%60].map(n => String(Math.floor(n)).padStart(2,'0')).join(':');
 };
+
+// A cada N fotos enviadas. Conta pelo TOTAL acumulado, nao por bloco, para
+// continuar valendo se o tamanho do bloco mudar. Numa retomada, a base comeca no
+// marco ja atingido — senao ele avisaria "1.200 de 9.993" assim que ligasse.
+function verificarMarco(m) {
+  const passo = Number(estado.cfg?.avisoMarco) || 0;
+  if (!passo || typeof m.env !== 'number') return;
+  const marco = Math.floor(m.env / passo) * passo;
+  if (marcoAvisado === null) { marcoAvisado = marco; return; }
+  if (marco <= marcoAvisado) return;
+  marcoAvisado = marco;
+  const met = calcularMetricas();
+  const partes = [`${m.env.toLocaleString('pt-BR')} de ${(m.alvo || 0).toLocaleString('pt-BR')} fotos`];
+  if (met.upload > 0) partes.push(`${Math.round(met.upload)} fotos/min`);
+  if (met.eta) partes.push(`faltam ${met.eta}`);
+  aviso('marco-' + marco, { titulo: 'Vigia EuCorro', texto: partes.join(' · '), tags: ['camera_flash'] });
+}
+
+// Linhas do vigia que significam "largue o que esta fazendo e volte ao computador".
+function verificarAlerta(l) {
+  // Parar a pedido derruba o navegador no meio, e o vigia registra "FALHA:" por
+  // causa disso. E consequencia do clique da pessoa, nao problema: avisar aqui
+  // seria acordar alguem de madrugada por algo que ela mesma fez.
+  if (pedidoParar) return;
+  if (/faca o login|faça o login|aguardando ate \d+ min/i.test(l))
+    return aviso('login', { prioridade: 5, tags: ['warning'], titulo: 'Precisa de voce',
+      texto: 'O EuCorro esta pedindo login. Volte ao computador e faca o login na janela que ja esta aberta.' });
+  if (/^FALHA:/.test(l))
+    return aviso('falha', { prioridade: 5, tags: ['rotating_light'], titulo: 'O programa parou com falha', texto: l });
+  if (/ATENCAO: fechei com/.test(l))
+    return aviso('abaixo-do-alvo', { prioridade: 4, tags: ['warning'], titulo: 'Terminou abaixo do alvo', texto: l });
+  // Pausa na exportacao: nao e erro, mas a pessoa quer saber que o Lightroom parou
+  // — pode ter travado sem ela perceber. Uma vez por pausa, nao uma vez por execucao.
+  const pausa = l.match(/exportacao parada .*\(pausa (\d+)\)/);
+  if (pausa)
+    return aviso('pausa-' + pausa[1], { prioridade: 3, tags: ['hourglass'],
+      titulo: 'Exportacao parada', texto: 'Nao entra foto nova na pasta ha alguns minutos. Ja enviei o que tinha e continuo vigiando — se o Lightroom parou, e so retomar.' });
+
+  const bloco = l.match(/bloco (\d+) OK .*erro=([1-9]\d*)/);
+  if (bloco && errosAvisados < 3) {
+    errosAvisados++;
+    aviso('erro-bloco-' + bloco[1], { prioridade: 4, tags: ['rotating_light'],
+      titulo: `${bloco[2]} foto(s) com erro`, texto: l });
+  }
+}
 
 function calcularMetricas() {
   const lote = Number(estado.cfg?.lote) || 0;
@@ -228,14 +326,21 @@ function iniciar(cfg) {
   if (process.env.VE_SETTLE) env.VE_SETTLE = process.env.VE_SETTLE;
   if (process.env.VE_POLL)   env.VE_POLL   = process.env.VE_POLL;
   if (process.env.VE_STALL)  env.VE_STALL  = process.env.VE_STALL;
+  if (process.env.VE_ESPERA_LOGIN) env.VE_ESPERA_LOGIN = process.env.VE_ESPERA_LOGIN;
 
   linhas = [];
   metricas = [];
+  avisosDados = new Set(); marcoAvisado = null; errosAvisados = 0;
+  avisoFalhouNaTela = false; pedidoParar = false;
   emitir(`Iniciando: ${cfg.alvo} fotos, blocos de ${cfg.lote}, galeria ${cfg.idGaleria}`);
   emitir(`Pasta: ${cfg.pasta}`);
 
   proc = spawn(process.execPath, [path.join(AQUI, 'vigia-eucorro.mjs')], { env, cwd: AQUI });
   estado = { rodando: true, iniciadoEm: new Date().toISOString(), ultimoErro: null, cfg };
+  // Prioridade baixa (sem som): serve de confirmacao de que o canal funciona
+  // NESTA execucao, antes da pessoa sair de perto.
+  aviso('inicio', { prioridade: 2, tags: ['camera'], titulo: 'Envio iniciado',
+    texto: `Alvo de ${Number(cfg.alvo).toLocaleString('pt-BR')} fotos, em blocos de ${cfg.lote}.` });
 
   // O Playwright despeja log interno no stderr quando algo falha. Isso e util pra
   // diagnostico, mas polui o painel — mando para um arquivo e mostro so o essencial.
@@ -255,13 +360,15 @@ function iniciar(cfg) {
         // nem sujam o diagnostico.log.
         if (limpa.startsWith('@@M ')) {
           try {
-            metricas.push(JSON.parse(limpa.slice(4)));
+            const m = JSON.parse(limpa.slice(4));
+            metricas.push(m);
             if (metricas.length > 400) metricas = metricas.slice(-400);
+            verificarMarco(m);
           } catch {}
           continue;
         }
         bruto.write(l + '\n');
-        if (!ruido(limpa)) emitir(limpa);
+        if (!ruido(limpa)) { emitir(limpa); verificarAlerta(limpa); }
       }
     });
   };
@@ -274,12 +381,31 @@ function iniciar(cfg) {
          : `=== ENCERRADO com codigo ${code} ===`);
     estado.rodando = false; estado.codigoSaida = code;
     proc = null;
+
+    // Parar a pedido nao e falha — nao incomoda ninguem no celular.
+    if (!pedidoParar) {
+      const ult = metricas[metricas.length - 1] || {};
+      const env = Number(ult.env) || 0;
+      if (code === 0)
+        aviso('fim-ok', { tags: ['white_check_mark'], titulo: 'Upload concluido',
+          texto: `${env.toLocaleString('pt-BR')} fotos enviadas com sucesso.` });
+      else if (code === 2)
+        aviso('fim-login', { prioridade: 5, tags: ['warning'], titulo: 'Precisa de voce',
+          texto: 'O programa parou: e preciso fazer o login do EuCorro na janela do navegador.' });
+      else if (code === 4)
+        aviso('fim-navegador', { prioridade: 5, tags: ['warning'], titulo: 'Precisa de voce',
+          texto: 'Nenhum navegador encontrado neste computador. Instale o Google Chrome e rode de novo.' });
+      else
+        aviso('fim-' + code, { prioridade: 4, tags: ['warning'], titulo: 'O programa encerrou',
+          texto: `Encerrou com codigo ${code}, em ${env.toLocaleString('pt-BR')} fotos. Veja o painel.` });
+    }
   });
   return true;
 }
 
 function parar() {
   if (!proc) return false;
+  pedidoParar = true;
   emitir('Parando a pedido...');
   proc.kill();          // o ledger ja tem tudo que foi enviado; retoma depois
   return true;
@@ -313,6 +439,24 @@ const servidor = http.createServer(async (req, res) => {
       catch (e) { return json(res, 400, { erro: 'Pasta nao encontrada' }); }
     }
 
+    // Guarda so os ajustes de aviso, sem precisar iniciar um envio.
+    if (u.pathname === '/api/config' && req.method === 'POST') {
+      const c = await corpo(req);
+      if ('avisoTopico' in c) conf.avisoTopico = String(c.avisoTopico || '').trim();
+      if ('avisoMarco'  in c) conf.avisoMarco  = Number(c.avisoMarco) || 0;
+      await fs.writeFile(CONFIG, JSON.stringify(conf, null, 2)).catch(() => {});
+      return json(res, 200, { ok: true });
+    }
+
+    // Botao "Testar aviso": sem isso a pessoa sai de perto confiando num canal
+    // que nunca viu funcionar.
+    if (u.pathname === '/api/testar-aviso' && req.method === 'POST') {
+      const c = await corpo(req);
+      const r = await enviarAviso({ prioridade: 3, tags: ['bell'], titulo: 'Teste do Vigia EuCorro',
+        texto: 'Se voce esta lendo isto no celular, os avisos estao funcionando.' }, c.topico);
+      return json(res, r.ok ? 200 : 400, r);
+    }
+
     if (u.pathname === '/api/escolher-pasta') {
       if (proc) return json(res, 400, { erro: 'OCUPADO' });
       return json(res, 200, await escolherPasta());
@@ -334,7 +478,8 @@ const servidor = http.createServer(async (req, res) => {
         return json(res, 400, { erro: 'Preencha todos os campos.' });
       try { await contarPasta(cfg.pasta); }
       catch { return json(res, 400, { erro: 'A pasta informada nao existe.' }); }
-      await fs.writeFile(CONFIG, JSON.stringify(cfg, null, 2)).catch(() => {});
+      conf = { ...conf, ...cfg };
+      await fs.writeFile(CONFIG, JSON.stringify(conf, null, 2)).catch(() => {});
       try { iniciar(cfg); return json(res, 200, { ok: true }); }
       catch (e) { return json(res, 400, { erro: e.message }); }
     }

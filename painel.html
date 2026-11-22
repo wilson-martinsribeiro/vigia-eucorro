@@ -139,6 +139,31 @@
     </div>
 
     <div class="card">
+      <h2 style="margin-top:0">Avisos no celular</h2>
+      <p class="det" style="color:var(--fraco);font-size:.88rem;margin:0 0 4px">
+        Recebe quando passar de cada N fotos, quando algo precisar de você e quando terminar.
+        Instale o app <b>ntfy</b> (gratuito) no celular, toque em <b>+</b> e inscreva-se no
+        mesmo nome de canal que estiver aqui embaixo.
+      </p>
+
+      <label>Nome do canal <span class="dica">(funciona como senha — não compartilhe)</span></label>
+      <input id="topico" placeholder="clique em Gerar nome">
+      <div class="aux">
+        <button type="button" id="btGerar">Gerar nome</button>
+        <button type="button" id="btTestar">Testar aviso</button>
+        <span class="dica" id="testou"></span>
+      </div>
+
+      <label>Avisar a cada <span class="dica">(fotos enviadas)</span></label>
+      <input id="marco" type="number" min="0" step="100" value="1000">
+
+      <p class="aviso">
+        Campo do canal vazio desliga todos os avisos. Zero em "avisar a cada" desliga só os
+        de progresso — os de erro e de conclusão continuam vindo.
+      </p>
+    </div>
+
+    <div class="card">
       <div class="nums">
         <span>Enviadas: <b id="nEnv">0</b> de <b id="nAlvo">—</b></span>
         <span id="pct">0%</span>
@@ -175,7 +200,7 @@
       <div class="passo"><div class="n">2</div><div class="c">
         <p><b>Baixe o programa</b></p>
         <p class="det">Abra <code>github.com/wilson-martinsribeiro/vigia-eucorro/releases/latest</code>,
-        procure a palavra <b>Assets</b> e clique no arquivo <code>automacao-eucorro-v4.2.zip</code>.
+        procure a palavra <b>Assets</b> e clique no arquivo <code>automacao-eucorro-v4.3.zip</code>.
         Esse endereço sempre aponta para a versão mais nova — vale salvar nos favoritos.</p>
       </div></div>
 
@@ -217,6 +242,54 @@
       <p class="det" style="color:var(--fraco);font-size:.9rem">
         Se ele disser que está na pasta errada, é porque precisa ficar <b>dentro</b> da
         <code>automacao-eucorro</code>, ao lado do <code>INICIAR-PAINEL.bat</code>. Mova e clique de novo.
+      </p>
+
+      <h2>Quando o programa para sozinho</h2>
+      <p class="det" style="color:var(--fraco);font-size:.9rem;margin-top:0">
+        Só em três situações: <b>atingiu o total esperado</b>, <b>você clicou em Parar</b>, ou
+        <b>deu erro de verdade</b> (precisa de login, nenhum navegador, falha).
+      </p>
+      <p class="det" style="color:var(--fraco);font-size:.9rem">
+        <b>Pausar a exportação não encerra.</b> Se o Lightroom parar de exportar por um tempo,
+        ele manda o que já estava pronto, avisa no celular que a exportação parou e
+        <b>continua vigiando a pasta</b>. Quando voltar a exportar, retoma sozinho, sem repetir
+        nenhuma foto. Só deixe a janela preta aberta.
+      </p>
+
+      <h2>Avisos no celular</h2>
+      <p class="det" style="color:var(--fraco);font-size:.9rem;margin-top:0">
+        Para acompanhar o envio sem ficar perto do computador. Chega aviso a cada N fotos,
+        quando algo precisar de você e quando terminar.
+      </p>
+
+      <div class="passo"><div class="n">1</div><div class="c">
+        <p><b>Instale o app <code>ntfy</code> no celular</b></p>
+        <p class="det">Procure por <b>ntfy</b> na loja de aplicativos. É gratuito e
+        <b>não pede cadastro nem senha</b>.</p>
+      </div></div>
+
+      <div class="passo"><div class="n">2</div><div class="c">
+        <p><b>Gere o nome do canal</b></p>
+        <p class="det">Na aba <b>Enviar fotos</b>, no bloco <b>Avisos no celular</b>, clique em
+        <b>Gerar nome</b>. Vai aparecer algo como <code>vigia-k7m2pq9xrt4vbn</code>.</p>
+      </div></div>
+
+      <div class="passo"><div class="n">3</div><div class="c">
+        <p><b>Inscreva-se nesse nome no app</b></p>
+        <p class="det">No ntfy, toque no <b>+</b> e digite exatamente o mesmo nome. Depois volte
+        ao painel e clique em <b>Testar aviso</b> — deve chegar uma notificação na hora.</p>
+        <p class="det"><b>Faça esse teste antes de sair de perto.</b> Não adianta confiar num
+        aviso que você nunca viu funcionar.</p>
+      </div></div>
+
+      <p class="det" style="color:var(--fraco);font-size:.9rem">
+        O nome do canal funciona como <b>senha</b>: quem souber recebe os seus avisos. Por isso
+        ele é sorteado, e não inventado. Não precisa ser o mesmo nome em cada computador — cada
+        pessoa recebe os avisos dos próprios envios.
+      </p>
+      <p class="det" style="color:var(--fraco);font-size:.9rem">
+        Se o aviso não sair por qualquer motivo, <b>o envio das fotos continua normalmente</b> —
+        a notificação nunca atrapalha o trabalho.
       </p>
 
       <h2>Usando no dia a dia</h2>
@@ -309,6 +382,16 @@ REGRAS DO NEGÓCIO
 - O Chrome não abre duas instâncias no mesmo perfil: por isso o painel bloqueia
   "carregar galerias" enquanto o vigia está rodando.
 
+QUANDO O VIGIA ENCERRA (regra atual — mudou na 4.3)
+Só por: ALVO atingido, usuário clicar em Parar, ou erro (saída 2/3/4 ou exceção).
+A pausa na exportação NÃO encerra mais. Até a 4.2, "3 min sem arquivo novo" era lido
+como "a exportação acabou": mandava o resto e dava break no laço. Apareceu em uso real —
+o Wilson pausou a exportação e achou o programa desligado em 1.513 de 3.914. Hoje a pausa
+só dispara o envio do resto (para a foto não esperar bloco cheio) e segue vigiando.
+A pausa é anunciada uma vez por episódio, TENDO OU NÃO sobra na pasta, e rearma quando
+a pasta volta a crescer (pausaAvisada). Antes o anúncio ia junto com o envio do resto,
+então um bloco fechando exato deixava a pessoa sem pista nenhuma.
+
 SALVAGUARDAS JÁ IMPLEMENTADAS (não remover sem motivo)
 - Guarda de mtime: não envia arquivo que o Lightroom ainda está gravando (8s parado)
 - Ledger por nome de arquivo: queda no meio retoma exatamente
@@ -344,6 +427,26 @@ pessoa, o endpoint /api/escolher-pasta abre um FolderBrowserDialog via PowerShel
 (-STA, com um Form TopMost como dono, senão a janela abre atrás do navegador) e
 devolve o caminho. Fora do Windows devolve SO_NAO_SUPORTADO. O campo de texto
 continua funcionando como saída de emergência — não remover.
+
+AVISOS NO CELULAR (ntfy)
+Escolhido por não exigir conta nem senha: o nome do tópico É a credencial, e fica
+só no painel-config.json da máquina. A tela SORTEIA o nome (crypto.getRandomValues,
+alfabeto sem 0/O e 1/l) em vez de deixar a pessoa inventar algo adivinhável.
+Publicação em JSON no corpo, não por cabeçalho HTTP — cabeçalho não carrega acento.
+Tudo mora em painel.mjs; o vigia não sabe que avisos existem.
+- /api/testar-aviso ... botão "Testar aviso"; sem ele a pessoa sai de perto
+                        confiando num canal que nunca viu funcionar
+- /api/config (POST) .. guarda tópico e marco sem precisar iniciar um envio
+- verificarMarco() .... dispara a cada N fotos pelo TOTAL acumulado, não por bloco;
+                        numa retomada a base começa no marco já atingido
+- verificarAlerta() ... linhas que significam "volte ao computador": login pedido,
+                        FALHA, fechou abaixo do alvo, bloco com erro (teto de 3)
+- aviso() ............. dispara e esquece, tempo limite de 8s. Um aviso que não sai
+                        NUNCA pode parar 10.000 fotos: a falha vai para o
+                        diagnostico.log e, uma vez por execução, para a tela
+- pedidoParar ......... Parar derruba o navegador e o vigia registra "FALHA:".
+                        É consequência do clique, não problema — não avisar.
+                        (Isso passou batido num teste de asserção frouxa.)
 
 CÓDIGOS DE SAÍDA DO VIGIA
 0 tudo certo · 2 precisa fazer login · 3 falta configuração · 4 nenhum navegador
@@ -410,7 +513,7 @@ function pintarEstado(e){
   $('#btParar').disabled = !on;
   $('#btGalerias').disabled = on;
   $('#btEscolher').disabled = on;
-  ['pasta','galeria','alvo','lote'].forEach(id => $('#'+id).disabled = on);
+  ['pasta','galeria','alvo','lote','topico','marco'].forEach(id => $('#'+id).disabled = on);
   const alvo = e.cfg?.alvo || Number($('#alvo').value) || 0;
   const env = e.enviadas || 0;
   $('#nEnv').textContent = env.toLocaleString('pt-BR');
@@ -440,6 +543,39 @@ function pintarMetricas(m, rodando){
 async function atualizar(){
   try { pintarEstado(await (await fetch('/api/estado')).json()); } catch {}
 }
+
+// O nome do canal e a unica credencial: quem souber recebe os avisos. Por isso
+// e sorteado aqui, com alfabeto sem caracteres que se confundem (0/O, 1/l).
+$('#btGerar').onclick = () => {
+  const alf = 'abcdefghijkmnpqrstuvwxyz23456789';
+  const r = crypto.getRandomValues(new Uint8Array(14));
+  $('#topico').value = 'vigia-' + Array.from(r, b => alf[b % alf.length]).join('');
+  salvarAvisos();
+};
+
+async function salvarAvisos(){
+  try {
+    await fetch('/api/config', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ avisoTopico: $('#topico').value.trim(), avisoMarco: Number($('#marco').value)||0 }) });
+  } catch {}
+}
+$('#topico').onchange = salvarAvisos;
+$('#marco').onchange  = salvarAvisos;
+
+$('#btTestar').onclick = async () => {
+  const t = $('#topico').value.trim();
+  if (!t) { $('#testou').textContent = 'gere um nome de canal primeiro'; return; }
+  await salvarAvisos();
+  const b = $('#btTestar'); b.disabled = true; $('#testou').textContent = 'enviando…';
+  try {
+    const r = await (await fetch('/api/testar-aviso', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ topico: t }) })).json();
+    $('#testou').textContent = r.ok ? 'enviado — veja o celular'
+      : r.erro === 'SEM_TOPICO' ? 'informe o nome do canal'
+      : 'não consegui enviar (' + r.erro + ')';
+  } catch { $('#testou').textContent = 'não consegui enviar'; }
+  b.disabled = false;
+};
 
 $('#btEscolher').onclick = async () => {
   const b = $('#btEscolher'); b.disabled = true; b.textContent = 'escolhendo…';
@@ -500,6 +636,8 @@ $('#btIniciar').onclick = async () => {
     idGaleria: $('#galeria').value,
     alvo: Number($('#alvo').value),
     lote: Number($('#lote').value),
+    avisoTopico: $('#topico').value.trim(),
+    avisoMarco: Number($('#marco').value) || 0,
   };
   if (!cfg.pasta)     return msg('Informe a pasta das fotos.','er');
   if (!cfg.idGaleria) return msg('Escolha a galeria (clique em "Carregar galerias").','er');
@@ -526,6 +664,8 @@ es.onmessage = ev => addLinha(JSON.parse(ev.data));
     if (c.pasta) $('#pasta').value = c.pasta;
     if (c.alvo)  $('#alvo').value  = c.alvo;
     if (c.lote)  $('#lote').value  = c.lote;
+    if (c.avisoTopico) $('#topico').value = c.avisoTopico;
+    if (c.avisoMarco !== undefined && c.avisoMarco !== null) $('#marco').value = c.avisoMarco;
     if (c.idGaleria) $('#galeria').innerHTML =
       `<option value="${c.idGaleria}">galeria ${c.idGaleria} (última usada)</option>`;
     // quem nunca usou cai direto no passo a passo

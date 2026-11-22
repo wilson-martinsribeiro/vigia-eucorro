@@ -41,7 +41,7 @@ const cfg = {
 const URL_FORM  = cfg.URL || `https://www.eucorro.com/painel/aws_upload/index.php?id=${cfg.ID_GALERIA}`;
 const SETTLE_MS = Number(process.env.VE_SETTLE || 8_000);    // so entra na fila se parado ha 8s (Lightroom terminou de gravar)
 const POLL_MS   = Number(process.env.VE_POLL   || 15_000);   // intervalo entre varreduras da pasta
-const STALL_MS  = Number(process.env.VE_STALL  || 180_000);  // sem arquivo novo por 3 min => manda o resto sem completar LOTE
+const STALL_MS  = Number(process.env.VE_STALL  || 180_000);  // sem arquivo novo por 3 min => manda o resto sem completar LOTE (e segue vigiando)
 const T_SET     = 15 * 60_000;
 const T_ESTAG   = 10 * 60_000;
 
@@ -225,14 +225,26 @@ try {
     log('Login detectado. Comecando a vigia.');
   }
 
-  let ultimoCrescimento = Date.now(), ultimoTotalPasta = -1, blocos = 0;
+  let ultimoCrescimento = Date.now(), ultimoTotalPasta = -1, blocos = 0, pausas = 0, pausaAvisada = false;
 
   while (enviadas.size < cfg.ALVO) {
     const { novos, totalNaPasta } = await varrer(enviadas);
     metrica({ pasta: totalNaPasta, env: enviadas.size, alvo: cfg.ALVO });
 
-    if (totalNaPasta !== ultimoTotalPasta) { ultimoTotalPasta = totalNaPasta; ultimoCrescimento = Date.now(); }
+    if (totalNaPasta !== ultimoTotalPasta) {
+      ultimoTotalPasta = totalNaPasta; ultimoCrescimento = Date.now();
+      pausaAvisada = false;                      // voltou a exportar: rearma o aviso
+    }
     const paradoHa = Date.now() - ultimoCrescimento;
+
+    // Anuncia a pausa uma vez por episodio, TENDO OU NAO sobra para enviar. Antes
+    // isso so saia junto com o envio do resto, entao um bloco que fechasse exato
+    // deixava a pessoa longe do computador sem nenhuma pista de que o Lightroom
+    // tinha parado.
+    if (paradoHa > STALL_MS && !pausaAvisada) {
+      pausaAvisada = true; pausas++;
+      log(`exportacao parada — continuo vigiando a pasta. (pausa ${pausas})`);
+    }
 
     // Envia quando juntou o lote, ou quando a exportacao parou e sobrou resto
     const fecharResto = novos.length > 0 && paradoHa > STALL_MS;
@@ -259,10 +271,13 @@ try {
     metrica({ pasta: await contarRapido(), env: enviadas.size, alvo: cfg.ALVO,
               bloco: r.ok, seg: Number(seg) });
 
+    // A exportacao pausou e eu mandei o que sobrou — mas NAO encerro por isso.
+    // A regra antiga tratava "3 min sem arquivo novo" como "a exportacao acabou" e
+    // desligava. Quem so deu uma pausa (almoco, outra tarefa) voltava e achava o
+    // programa morto no meio do alvo. Agora so termino por tres motivos: atingir o
+    // ALVO, o usuario mandar parar, ou erro de verdade.
     if (fecharResto && novos.length <= cfg.LOTE) {
-      log('exportacao parada e resto enviado.');
-      if (enviadas.size < cfg.ALVO) log(`ATENCAO: fechei com ${enviadas.size}, abaixo do alvo ${cfg.ALVO}.`);
-      break;
+      log('resto da pasta enviado; sigo vigiando ate o alvo.');
     }
   }
 

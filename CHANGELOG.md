@@ -1,5 +1,50 @@
 # Histórico de versões
 
+## 4.3 — 18/10/2026
+
+### Pausar a exportação não encerra mais o programa
+
+**Era um defeito, e apareceu em uso real:** o Wilson parou de exportar por alguns minutos
+e encontrou o vigia desligado em 1.513 de 3.914 fotos.
+
+A regra antiga tratava "3 minutos sem arquivo novo" como "a exportação acabou", mandava o
+que tinha sobrado e **encerrava**. O sinal estava errado: quem só faz uma pausa — almoço,
+outra tarefa — não acabou nada.
+
+Agora a pausa continua disparando o envio do resto (foto não fica parada esperando bloco
+cheio), mas **o programa segue vigiando**. Ele só termina por três motivos: atingir o alvo,
+o usuário clicar em Parar, ou erro de verdade.
+
+Junto veio um buraco relacionado: o aviso de pausa só saía quando havia sobra na pasta.
+Com um bloco fechando exato, quem estava longe do computador não recebia pista nenhuma de
+que o Lightroom tinha parado. Agora a pausa é anunciada uma vez por episódio, havendo
+sobra ou não, e rearma quando a exportação volta.
+
+### Avisos no celular
+
+Para acompanhar o envio sem ficar perto do computador.
+
+- A cada N fotos (padrão 1.000), com velocidade e tempo restante na mensagem.
+- Quando algo precisa de atuação manual — login pedido, nenhum navegador, bloco com erro,
+  falha — com prioridade urgente.
+- Quando conclui.
+
+Canal: **ntfy**. Escolhido por ser o único que **não exige conta nem senha no disco** — e este
+programa vira ZIP e é compartilhado, então credencial em arquivo seria risco de verdade. O
+nome do tópico é a credencial, e a tela o **sorteia** em vez de deixar a pessoa inventar algo
+adivinhável. Botão **Testar aviso** para confirmar antes de sair de perto.
+
+Regras que valem mais que o recurso em si:
+
+- **Aviso nunca derruba o envio.** Dispara e esquece, timeout de 8s; falha vai para o
+  `diagnostico.log` e, uma única vez por execução, para a tela.
+- Marco conta pelo **total acumulado**, não por bloco — continua valendo se o bloco mudar.
+  Numa retomada, a base começa no marco já atingido.
+- Teto de 3 avisos de bloco com erro por execução, e um aviso por tipo.
+- **Clicar em Parar não avisa.** Parar derruba o navegador e o vigia registra `FALHA:`; isso é
+  consequência do clique, não problema. Esse caso passou batido numa primeira versão do teste
+  cuja asserção era frouxa demais — a correção foi trocar por lista branca de títulos.
+
 ## 4.2 — 12/10/2026
 
 ### Aba "Enviar fotos"

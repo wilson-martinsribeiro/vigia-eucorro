@@ -12,7 +12,7 @@ opções padrão.
 
 **2. Baixe o programa.** Abra
 https://github.com/wilson-martinsribeiro/vigia-eucorro/releases/latest, procure a palavra
-**Assets** e clique no arquivo `automacao-eucorro-v4.2.zip`. Esse endereço sempre aponta
+**Assets** e clique no arquivo `automacao-eucorro-v4.3.zip`. Esse endereço sempre aponta
 para a versão mais nova.
 
 **2b. Extraia na Área de Trabalho.** Botão **direito** no arquivo baixado → **Extrair
@@ -46,6 +46,43 @@ Abaixo do log aparecem três números, medidos durante o envio: a velocidade com
 Lightroom está **exportando**, a velocidade do **upload** e a **estimativa de conclusão**.
 A estimativa só aparece depois do primeiro bloco — antes disso não há dado suficiente e
 qualquer número seria chute.
+
+---
+
+## Quando o programa para sozinho
+
+Só em três situações:
+
+1. **Atingiu o total esperado** que você informou
+2. **Você clicou em Parar**
+3. **Deu erro de verdade** — precisa de login, nenhum navegador, falha
+
+**Pausar a exportação não encerra.** Se você parar de exportar do Lightroom por um tempo,
+ele manda o que já estava pronto e **continua vigiando a pasta**. Quando você voltar a
+exportar, ele retoma sozinho, sem repetir nenhuma foto. Deixe a janela preta aberta.
+
+> Até a versão 4.2 não era assim: três minutos sem foto nova e ele desligava no meio.
+> Se o seu encerrou sem chegar ao total, é só clicar em **Iniciar** de novo — o histórico
+> garante que nada sobe duas vezes.
+
+---
+
+## Avisos no celular
+
+Para acompanhar sem ficar perto do computador.
+
+1. Instale o app **ntfy** no celular (gratuito, **não pede cadastro nem senha**).
+2. No painel, bloco **Avisos no celular**, clique em **Gerar nome**.
+3. No app, toque em **+** e inscreva-se exatamente nesse nome.
+4. Clique em **Testar aviso** e confira se chegou. **Faça isso antes de sair de perto.**
+
+Você recebe a cada N fotos (padrão 1.000), quando algo precisar de você, e quando terminar.
+
+O nome do canal funciona como **senha** — quem souber recebe os seus avisos. Por isso ele é
+sorteado, não inventado. Cada computador tem o seu: cada pessoa recebe os avisos dos próprios
+envios.
+
+Se o aviso não sair, **o envio das fotos continua normalmente**.
 
 ---
 
@@ -105,7 +142,7 @@ pasta. Mande esse arquivo junto com o que você estava fazendo.
 **Em produção:** 9.993 fotos enviadas para a galeria FURIOSO EXTREMA, zero duplicados,
 zero erros, com o Lightroom exportando em paralelo durante parte do envio.
 
-**Automatizado**, 49 verificações contra uma réplica do uploader do EuCorro:
+**Automatizado**, 88 verificações contra uma réplica do uploader do EuCorro:
 
 - **Motor (6):** 1.200 fotos com a pasta crescendo durante o envio → cobertura completa
   de 1 a 1.200, zero duplicados · para exato no total pedido e avisa se sobrou arquivo
@@ -122,8 +159,15 @@ zero erros, com o Lightroom exportando em paralelo durante parte do envio.
   velocidade de upload medida · estimativa no formato correto, caindo até zero conforme
   avança · exportação marcada como concluída no fim · os dados de medição nunca aparecem
   no log da tela nem sujam o diagnóstico
-- **Escolher pasta (8):** responde sem travar, recusa durante um envio, e quando a janela
+- **Escolher pasta (9):** responde sem travar, recusa durante um envio, e quando a janela
   não pode abrir a tela ensina a colar o caminho em vez de mostrar erro técnico
+- **Pausa na exportação (10):** para de exportar no meio → o programa **não encerra**,
+  manda o que sobrou e continua vigiando · volta a exportar → retoma sozinho até o alvo ·
+  cobertura completa, zero duplicados · avisa a pausa mesmo quando não sobrou nada na pasta
+- **Avisos (28):** chegam nos marcos certos e uma vez só · trazem velocidade e tempo restante ·
+  avisam quando precisa de você, com urgência · **o envio conclui mesmo com o serviço de aviso
+  fora do ar** · clicar em Parar não dispara aviso de erro · sem canal configurado, nada é
+  enviado e nada é reclamado
 
 **Ainda não verificado:** se o EuCorro aceita janela oculta — por isso ela vem visível;
 se a tabela de status dele renderiza todas as linhas de um bloco grande de uma vez; e o
